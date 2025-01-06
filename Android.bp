@@ -277,7 +277,6 @@ cc_test_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.os.statsd",
-        "test_com.android.os.statsd",
     ],
     min_sdk_version: "29",
 }
@@ -479,6 +478,7 @@ java_library_static {
         "//apex_available:platform",
         "com.android.tethering",
         "com.android.wifi",
+        "com.android.neuralnetworks",
     ],
 }
 
@@ -619,7 +619,7 @@ java_library_static {
 
     optimize: {
         proguard_flags_files: ["java/lite/proguard.pgcfg"],
-    }
+    },
 }
 
 // Java lite library (compatibility for old host-side users)
@@ -754,7 +754,6 @@ filegroup {
     ],
     path: "src",
 }
-
 
 filegroup {
     name: "libprotobuf-internal-any-proto",
