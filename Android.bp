@@ -99,7 +99,6 @@ cc_defaults {
     ],
 
     local_include_dirs: [
-        "android",
         "src",
     ],
     export_include_dirs: ["src"],
@@ -375,9 +374,7 @@ cc_library {
     ],
 
     export_include_dirs: [
-        "android",
         "src",
-        "config",
     ],
     cflags: [
         "-Wno-unused-private-field",

@@ -104,6 +104,10 @@ void SetMessageVariables(const FieldDescriptor* descriptor, int messageBitIndex,
       GenerateGetBitFromLocal(builderBitIndex);
   (*variables)["set_has_field_bit_to_local"] =
       GenerateSetBitToLocal(messageBitIndex);
+
+  // We use `x.getClass()` as a null check because it generates less bytecode
+  // than an `if (x == null) { throw ... }` statement.
+  (*variables)["null_check"] = "value.getClass();\n";
 }
 
 }  // namespace
@@ -185,7 +189,7 @@ void ImmutableMessageFieldLiteGenerator::GenerateMembers(
   printer->Print(variables_,
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void set$capitalized_name$($type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  $name$_ = value;\n"
                  "  $set_has_field_bit_message$\n"
                  "  }\n");
@@ -196,7 +200,7 @@ void ImmutableMessageFieldLiteGenerator::GenerateMembers(
       variables_,
       "@java.lang.SuppressWarnings({\"ReferenceEquality\", \"ReturnValueIgnored\"})\n"
       "private void merge$capitalized_name$($type$ value) {\n"
-      "  value.getClass();  // minimal bytecode null check\n"
+      "  $null_check$"
       "  if ($name$_ != null &&\n"
       "      $name$_ != $type$.getDefaultInstance()) {\n"
       "    $name$_ =\n"
@@ -378,7 +382,7 @@ void ImmutableMessageOneofFieldLiteGenerator::GenerateMembers(
   printer->Print(variables_,
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void set$capitalized_name$($type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  $oneof_name$_ = value;\n"
                  "  $set_oneof_case_message$;\n"
                  "}\n");
@@ -389,7 +393,7 @@ void ImmutableMessageOneofFieldLiteGenerator::GenerateMembers(
       variables_,
       "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
       "private void merge$capitalized_name$($type$ value) {\n"
-      "  value.getClass();  // minimal bytecode null check\n"
+      "  $null_check$"
       "  if ($has_oneof_case_message$ &&\n"
       "      $oneof_name$_ != $type$.getDefaultInstance()) {\n"
       "    $oneof_name$_ = $type$.newBuilder(($type$) $oneof_name$_)\n"
@@ -590,7 +594,7 @@ void RepeatedImmutableMessageFieldLiteGenerator::GenerateMembers(
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void set$capitalized_name$(\n"
                  "    int index, $type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  ensure$capitalized_name$IsMutable();\n"
                  "  $name$_.set(index, value);\n"
                  "}\n");
@@ -600,7 +604,7 @@ void RepeatedImmutableMessageFieldLiteGenerator::GenerateMembers(
   printer->Print(variables_,
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void add$capitalized_name$($type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  ensure$capitalized_name$IsMutable();\n"
                  "  $name$_.add(value);\n"
                  "}\n");
@@ -611,7 +615,7 @@ void RepeatedImmutableMessageFieldLiteGenerator::GenerateMembers(
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void add$capitalized_name$(\n"
                  "    int index, $type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  ensure$capitalized_name$IsMutable();\n"
                  "  $name$_.add(index, value);\n"
                  "}\n");

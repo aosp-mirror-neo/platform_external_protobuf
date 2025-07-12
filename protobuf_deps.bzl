@@ -120,35 +120,3 @@ def protobuf_deps():
             commit = "20b542a767139732548f7b8cf28c4c928cdcb07b",
             sha256 = "c77158955326f9e9a0cf8481c118b8ad5c34df99e5db3af27f3d1662d8bedef7",
         )
-
-    if not native.existing_rule("six"):
-        http_archive(
-            name = "six",
-            build_file = "@//:six.BUILD",
-            sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
-            urls = ["https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz#md5=34eed507548117b2ab523ab14b2f8b55"],
-        )
-
-    if not native.existing_rule("rules_cc"):
-        http_archive(
-            name = "rules_cc",
-            sha256 = "29daf0159f0cf552fcff60b49d8bcd4f08f08506d2da6e41b07058ec50cfeaec",
-            strip_prefix = "rules_cc-b7fe9697c0c76ab2fd431a891dbb9a6a32ed7c3e",
-            urls = ["https://github.com/bazelbuild/rules_cc/archive/b7fe9697c0c76ab2fd431a891dbb9a6a32ed7c3e.tar.gz"],
-        )
-
-    if not native.existing_rule("rules_java"):
-        http_archive(
-            name = "rules_java",
-            sha256 = "f5a3e477e579231fca27bf202bb0e8fbe4fc6339d63b38ccb87c2760b533d1c3",
-            strip_prefix = "rules_java-981f06c3d2bd10225e85209904090eb7b5fb26bd",
-            urls = ["https://github.com/bazelbuild/rules_java/archive/981f06c3d2bd10225e85209904090eb7b5fb26bd.tar.gz"],
-        )
-
-    if not native.existing_rule("rules_proto"):
-        http_archive(
-            name = "rules_proto",
-            sha256 = "88b0a90433866b44bb4450d4c30bc5738b8c4f9c9ba14e9661deb123f56a833d",
-            strip_prefix = "rules_proto-b0cc14be5da05168b01db282fe93bdf17aa2b9f4",
-            urls = ["https://github.com/bazelbuild/rules_proto/archive/b0cc14be5da05168b01db282fe93bdf17aa2b9f4.tar.gz"],
-        )

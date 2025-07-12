@@ -2213,7 +2213,6 @@ bool CommandLineInterface::GenerateDependencyManifestFile(
     output_filenames.push_back(descriptor_set_out_name_);
   }
 
-  // Create the depfile, even if it will be empty.
   int fd;
   do {
     fd = open(dependency_out_name_.c_str(),
