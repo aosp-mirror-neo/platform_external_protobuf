@@ -124,6 +124,10 @@ void SetEnumVariables(const FieldDescriptor* descriptor, int messageBitIndex,
   } else {
     (*variables)["unknown"] = (*variables)["default"];
   }
+
+  // We use `x.getClass()` as a null check because it generates less bytecode
+  // than an `if (x == null) { throw ... }` statement.
+  (*variables)["null_check"] = "value.getClass();\n";
 }
 
 }  // namespace
@@ -620,7 +624,7 @@ void RepeatedImmutableEnumFieldLiteGenerator::GenerateMembers(
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void set$capitalized_name$(\n"
                  "    int index, $type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  ensure$capitalized_name$IsMutable();\n"
                  "  $name$_.setInt(index, value.getNumber());\n"
                  "}\n");
@@ -628,7 +632,7 @@ void RepeatedImmutableEnumFieldLiteGenerator::GenerateMembers(
   printer->Print(variables_,
                  "@java.lang.SuppressWarnings(\"ReturnValueIgnored\")\n"
                  "private void add$capitalized_name$($type$ value) {\n"
-                 "  value.getClass();  // minimal bytecode null check\n"
+                 "  $null_check$"
                  "  ensure$capitalized_name$IsMutable();\n"
                  "  $name$_.addInt(value.getNumber());\n"
                  "}\n");
