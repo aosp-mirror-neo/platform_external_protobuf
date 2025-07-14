@@ -618,13 +618,6 @@ java_library_static {
     },
 }
 
-// Java lite library (compatibility for old host-side users)
-// =======================================================
-java_library_host {
-    name: "host-libprotobuf-java-lite",
-    static_libs: ["libprotobuf-java-lite"],
-}
-
 // Java full library (for host-side users)
 // =======================================================
 java_library_host {
