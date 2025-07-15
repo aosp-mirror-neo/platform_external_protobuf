@@ -128,9 +128,9 @@ cc_library_static {
     name: "libprotobuf-cpp-lite-ndk",
     defaults: ["libprotobuf-cpp-lite-defaults"],
 
-    sdk_version: "9",
+    sdk_version: "29",
 
-    stl: "c++_static",
+    stl: "libc++_static",
     apex_available: [
         "//apex_available:platform",
         "com.android.adservices",
@@ -236,9 +236,9 @@ cc_library_static {
     name: "libprotobuf-cpp-full-ndk",
     defaults: ["libprotobuf-cpp-full-defaults"],
 
-    sdk_version: "9",
+    sdk_version: "29",
 
-    stl: "c++_static",
+    stl: "libc++_static",
 }
 
 // C++ full library for the platform and host
