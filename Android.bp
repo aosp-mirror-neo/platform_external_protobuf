@@ -99,7 +99,6 @@ cc_defaults {
     ],
 
     local_include_dirs: [
-        "android",
         "src",
     ],
     export_include_dirs: ["src"],
@@ -375,9 +374,7 @@ cc_library {
     ],
 
     export_include_dirs: [
-        "android",
         "src",
-        "config",
     ],
     cflags: [
         "-Wno-unused-private-field",
@@ -619,13 +616,6 @@ java_library_static {
     optimize: {
         proguard_flags_files: ["java/lite/proguard.pgcfg"],
     },
-}
-
-// Java lite library (compatibility for old host-side users)
-// =======================================================
-java_library_host {
-    name: "host-libprotobuf-java-lite",
-    static_libs: ["libprotobuf-java-lite"],
 }
 
 // Java full library (for host-side users)
