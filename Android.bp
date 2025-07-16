@@ -14,6 +14,7 @@
 
 package {
     default_applicable_licenses: ["external_protobuf_license"],
+    default_visibility: [":__subpackages__"],
 }
 
 // Protobuf itself is BSD. Android build scripts are Apache 2.0.
@@ -21,7 +22,6 @@ package {
 // is MIT licensed, which is covered by their separate Android.bp files.
 license {
     name: "external_protobuf_license",
-    visibility: [":__subpackages__"],
     license_kinds: [
         "SPDX-license-identifier-Apache-2.0",
         "SPDX-license-identifier-BSD",
@@ -35,7 +35,6 @@ license {
 // from GNU Classpath to work around a compilation issue.
 license {
     name: "external_protobuf_libcore_private_stubs_license",
-    visibility: [":__subpackages__"],
     license_kinds: [
         "SPDX-license-identifier-GPL-2.0-with-classpath-exception",
     ],
@@ -43,7 +42,6 @@ license {
 
 cc_defaults {
     name: "protobuf-cflags-defaults",
-
     cflags: [
         "-Wall",
         "-Werror",
@@ -52,7 +50,6 @@ cc_defaults {
         "-Wno-unused-parameter",
         "-Wno-error=user-defined-warnings",
     ],
-
     target: {
         windows: {
             cflags: ["-Wno-macro-redefined"],
@@ -126,11 +123,12 @@ cc_defaults {
 // =======================================================
 cc_library_static {
     name: "libprotobuf-cpp-lite-ndk",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf-cpp-lite-defaults"],
 
-    sdk_version: "9",
+    sdk_version: "29",
 
-    stl: "c++_static",
+    stl: "libc++_static",
     apex_available: [
         "//apex_available:platform",
         "com.android.adservices",
@@ -144,6 +142,7 @@ cc_library_static {
 // =======================================================
 cc_library {
     name: "libprotobuf-cpp-lite",
+    visibility: ["//visibility:public"],
     host_supported: true,
     ramdisk_available: true,
     recovery_available: true,
@@ -234,17 +233,19 @@ cc_defaults {
 // =======================================================
 cc_library_static {
     name: "libprotobuf-cpp-full-ndk",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf-cpp-full-defaults"],
 
-    sdk_version: "9",
+    sdk_version: "29",
 
-    stl: "c++_static",
+    stl: "libc++_static",
 }
 
 // C++ full library for the platform and host
 // =======================================================
 cc_library {
     name: "libprotobuf-cpp-full",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf-cpp-full-defaults"],
     host_supported: true,
     recovery_available: true,
@@ -283,6 +284,7 @@ cc_test_library {
 // =======================================================
 cc_library {
     name: "libprotoc",
+    visibility: ["//visibility:public"],
     host_supported: true,
     device_supported: false,
     defaults: ["libprotobuf-cpp-full-defaults"],
@@ -395,6 +397,7 @@ cc_library {
 // =======================================================
 cc_binary_host {
     name: "aprotoc",
+    visibility: ["//visibility:public"],
     defaults: ["protobuf-cflags-defaults"],
 
     target: {
@@ -453,6 +456,7 @@ java_defaults {
 // =======================================================
 java_library_static {
     name: "libprotobuf-java-nano",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf_errorprone_defaults"],
     host_supported: true,
 
@@ -482,6 +486,7 @@ java_library_static {
 // =======================================================
 java_library_static {
     name: "libprotobuf-java-micro",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf_errorprone_defaults"],
     host_supported: true,
 
@@ -499,6 +504,7 @@ java_library_static {
 // =======================================================
 java_library_static {
     name: "libprotobuf-java-lite",
+    visibility: ["//visibility:public"],
     host_supported: true,
     sdk_version: "core_current",
     defaults: ["libprotobuf_errorprone_defaults"],
@@ -622,6 +628,7 @@ java_library_static {
 // =======================================================
 java_library_host {
     name: "libprotobuf-java-full",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf_errorprone_defaults"],
 
     srcs: [
@@ -647,6 +654,7 @@ java_library_host {
 
 java_library_host {
     name: "libprotobuf-java-util-full",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf_errorprone_defaults"],
     srcs: [
         "java/util/src/main/java/com/google/protobuf/util/*.java",
@@ -671,6 +679,7 @@ java_library_host {
 // =======================================================
 java_library_host {
     name: "host-libprotobuf-java-full",
+    visibility: ["//visibility:public"],
     static_libs: ["libprotobuf-java-full"],
 }
 
@@ -678,6 +687,7 @@ java_library_host {
 // =======================================================
 java_library {
     name: "libcore_private.stubs",
+    visibility: ["//visibility:public"],
     srcs: ["java/core/src/stubs/**/*.java"],
     sdk_version: "core_current",
     installable: false,
@@ -689,6 +699,8 @@ java_library {
 // =======================================================
 python_library {
     name: "libprotobuf-python",
+    visibility: ["//visibility:public"],
+    host_supported: true,
     srcs: [
         ":libprotobuf-internal-python-srcs",
         ":libprotobuf-internal-protos",
@@ -702,7 +714,6 @@ python_library {
         ],
         canonical_path_from_root: false,
     },
-    host_supported: true,
 }
 
 filegroup {
@@ -719,6 +730,7 @@ filegroup {
 
 filegroup {
     name: "libprotobuf-internal-protos",
+    visibility: ["//visibility:public"],
     srcs: [
         "src/google/protobuf/descriptor.proto",
         "src/google/protobuf/any.proto",
@@ -738,6 +750,7 @@ filegroup {
 
 filegroup {
     name: "libprotobuf-internal-descriptor-proto",
+    visibility: ["//visibility:public"],
     srcs: [
         "src/google/protobuf/descriptor.proto",
     ],
@@ -746,6 +759,7 @@ filegroup {
 
 filegroup {
     name: "libprotobuf-internal-any-proto",
+    visibility: ["//visibility:public"],
     srcs: [
         "src/google/protobuf/any.proto",
     ],
@@ -1036,6 +1050,7 @@ android_test {
 // =======================================================
 cc_binary_host {
     name: "protoc-gen-javamicro",
+    visibility: ["//visibility:public"],
     defaults: ["protobuf-cflags-defaults"],
     srcs: [
         "src/google/protobuf/compiler/javamicro/javamicro_enum.cc",
@@ -1064,6 +1079,7 @@ cc_binary_host {
 // =======================================================
 cc_binary_host {
     name: "protoc-gen-javanano",
+    visibility: ["//visibility:public"],
     defaults: ["protobuf-cflags-defaults"],
     srcs: [
         "src/google/protobuf/compiler/javanano/javanano_enum.cc",
