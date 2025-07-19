@@ -109,12 +109,13 @@ cc_defaults {
         },
 
         // This suffix for vendor and product must be updated
-        // when a new version is imported.
+        // when a new version is imported. It should match
+        // the "cpp" entry in version.json.
         vendor: {
-            suffix: "-21.12",
+            suffix: "-3.21.12",
         },
         product: {
-            suffix: "-21.12",
+            suffix: "-3.21.12",
         },
     },
 }
@@ -436,7 +437,12 @@ cc_test {
         "libprotobuf-cpp-lite",
         "libprotobuf-cpp-full",
     ],
-    static_libs: ["libbase"],
+    static_libs: [
+        "absl_strings",
+        "absl_strings_str_format",
+        "libgmock",
+        "libgtest",
+    ],
     stl: "libc++",
     test_suites: ["general-tests"],
     test_config: "vendor_suffix_test.config",
