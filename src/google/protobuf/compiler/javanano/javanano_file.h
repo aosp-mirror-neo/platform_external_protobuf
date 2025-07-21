@@ -58,6 +58,8 @@ namespace javanano {
 class FileGenerator {
  public:
   explicit FileGenerator(const FileDescriptor* file, const Params& params);
+  FileGenerator(const FileGenerator&) = delete;
+  FileGenerator& operator=(const FileGenerator&) = delete;
   ~FileGenerator();
 
   // Checks for problems that would otherwise lead to cryptic compile errors.
@@ -82,8 +84,6 @@ class FileGenerator {
   const Params& params_;
   std::string java_package_;
   std::string classname_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FileGenerator);
 };
 
 }  // namespace javanano

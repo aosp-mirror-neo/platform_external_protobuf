@@ -35,12 +35,13 @@
 #include <map>
 #include <string>
 
+#include <absl/log/absl_log.h>
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javamicro/javamicro_enum_field.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -57,11 +58,11 @@ void SetEnumVariables(const Params& params,
     UnderscoresToCamelCase(descriptor);
   (*variables)["capitalized_name"] =
     UnderscoresToCapitalizedCamelCase(descriptor);
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   (*variables)["type"] = "int";
   (*variables)["default"] = DefaultValue(params, descriptor);
-  (*variables)["tag"] = SimpleItoa(internal::WireFormat::MakeTag(descriptor));
-  (*variables)["tag_size"] = SimpleItoa(
+  (*variables)["tag"] = absl::StrCat(internal::WireFormat::MakeTag(descriptor));
+  (*variables)["tag_size"] = absl::StrCat(
       internal::WireFormat::TagSize(descriptor->number(), descriptor->type()));
   (*variables)["message_name"] = descriptor->containing_type()->name();
 }
@@ -140,7 +141,7 @@ RepeatedEnumFieldGenerator(const FieldDescriptor* descriptor, const Params& para
   : FieldGenerator(params), descriptor_(descriptor) {
   SetEnumVariables(params, descriptor, &variables_);
   if (descriptor_->options().packed()) {
-    GOOGLE_LOG(FATAL) << "MicroRuntime does not support packed";
+    ABSL_LOG(FATAL) << "MicroRuntime does not support packed";
   }
 }
 

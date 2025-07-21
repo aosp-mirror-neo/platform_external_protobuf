@@ -35,11 +35,11 @@
 #include <map>
 #include <string>
 
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javanano/javanano_message_field.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -47,7 +47,6 @@ namespace compiler {
 namespace javanano {
 
 using internal::WireFormat;
-using internal::WireFormatLite;
 
 namespace {
 
@@ -59,14 +58,14 @@ void SetMessageVariables(const Params& params,
     RenameJavaKeywords(UnderscoresToCamelCase(descriptor));
   (*variables)["capitalized_name"] =
     RenameJavaKeywords(UnderscoresToCapitalizedCamelCase(descriptor));
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   (*variables)["type"] = ClassName(params, descriptor->message_type());
   (*variables)["group_or_message"] =
     (descriptor->type() == FieldDescriptor::TYPE_GROUP) ?
     "Group" : "Message";
   (*variables)["message_name"] = descriptor->containing_type()->name();
   //(*variables)["message_type"] = descriptor->message_type()->name();
-  (*variables)["tag"] = SimpleItoa(WireFormat::MakeTag(descriptor));
+  (*variables)["tag"] = absl::StrCat(WireFormat::MakeTag(descriptor));
 }
 
 }  // namespace

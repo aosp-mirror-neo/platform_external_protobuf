@@ -35,11 +35,11 @@
 #include <map>
 #include <string>
 
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javamicro/javamicro_message_field.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -56,7 +56,7 @@ void SetMessageVariables(const Params& params,
     UnderscoresToCamelCase(descriptor);
   (*variables)["capitalized_name"] =
     UnderscoresToCapitalizedCamelCase(descriptor);
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   (*variables)["type"] = ClassName(params, descriptor->message_type());
   (*variables)["group_or_message"] =
     (descriptor->type() == FieldDescriptor::TYPE_GROUP) ?

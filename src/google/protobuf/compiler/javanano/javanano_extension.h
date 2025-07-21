@@ -54,6 +54,8 @@ namespace javanano {
 class ExtensionGenerator {
  public:
   explicit ExtensionGenerator(const FieldDescriptor* descriptor, const Params& params);
+  ExtensionGenerator(const ExtensionGenerator&) = delete;
+  ExtensionGenerator& operator=(const ExtensionGenerator&) = delete;
   ~ExtensionGenerator();
 
   void Generate(io::Printer* printer) const;
@@ -62,8 +64,6 @@ class ExtensionGenerator {
   const Params& params_;
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ExtensionGenerator);
 };
 
 }  // namespace javanano

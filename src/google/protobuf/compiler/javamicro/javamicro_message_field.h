@@ -47,6 +47,8 @@ namespace javamicro {
 class MessageFieldGenerator : public FieldGenerator {
  public:
   explicit MessageFieldGenerator(const FieldDescriptor* descriptor, const Params& params);
+  MessageFieldGenerator(const MessageFieldGenerator&) = delete;
+  MessageFieldGenerator& operator=(const MessageFieldGenerator&) = delete;
   ~MessageFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -61,14 +63,14 @@ class MessageFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageFieldGenerator);
 };
 
 class RepeatedMessageFieldGenerator : public FieldGenerator {
  public:
   explicit RepeatedMessageFieldGenerator(const FieldDescriptor* descriptor,
         const Params& params);
+  RepeatedMessageFieldGenerator(const RepeatedMessageFieldGenerator&) = delete;
+  RepeatedMessageFieldGenerator& operator=(const RepeatedMessageFieldGenerator&) = delete;
   ~RepeatedMessageFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -83,8 +85,6 @@ class RepeatedMessageFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RepeatedMessageFieldGenerator);
 };
 
 }  // namespace javamicro
