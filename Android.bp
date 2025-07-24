@@ -43,7 +43,6 @@ license {
 cc_defaults {
     name: "protobuf-cflags-defaults",
     cflags: [
-        "-Wall",
         "-Werror",
         "-Wno-missing-field-initializers",
         "-Wno-unused-function",
@@ -58,7 +57,49 @@ cc_defaults {
 }
 
 cc_defaults {
-    name: "libprotobuf-cpp-lite-defaults",
+    name: "protobuf-lite-availability-defaults",
+
+    min_sdk_version: "29",
+
+    double_loadable: true,
+    host_supported: true,
+    product_available: true,
+    ramdisk_available: true,
+    recovery_available: true,
+    vendor_available: true,
+    vendor_ramdisk_available: true,
+    target: {
+        windows: {
+            enabled: true,
+        },
+    },
+
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+}
+
+cc_defaults {
+    name: "protobuf-full-availability-defaults",
+    defaults: ["protobuf-lite-availability-defaults"],
+
+    double_loadable: false,
+    ramdisk_available: false,
+    vendor_ramdisk_available: false,
+    target: {
+        android: {
+            static: {
+                enabled: false,
+            },
+        },
+    },
+}
+
+// Defaults for the lite library that do not depend on whether
+// thread-local storage is enabled.
+cc_defaults {
+    name: "libprotobuf-cpp-lite-tlsagnostic-defaults",
     defaults: ["protobuf-cflags-defaults"],
     srcs: [
         "src/google/protobuf/any_lite.cc",
@@ -120,6 +161,15 @@ cc_defaults {
     },
 }
 
+// Defaults for the lite library when thread-local storage is enabled.
+// TODO: b/329747255 - placeholder for the upgrade to Protobuf 22.5.
+cc_defaults {
+    name: "libprotobuf-cpp-lite-defaults",
+    defaults: [
+        "libprotobuf-cpp-lite-tlsagnostic-defaults",
+    ],
+}
+
 // C++ lite library for the NDK.
 // =======================================================
 cc_library_static {
@@ -144,25 +194,25 @@ cc_library_static {
 cc_library {
     name: "libprotobuf-cpp-lite",
     visibility: ["//visibility:public"],
-    host_supported: true,
-    ramdisk_available: true,
-    recovery_available: true,
-    vendor_available: true,
-    vendor_ramdisk_available: true,
-    product_available: true,
-    double_loadable: true,
-    defaults: ["libprotobuf-cpp-lite-defaults"],
-
-    target: {
-        windows: {
-            enabled: true,
-        },
-    },
-    apex_available: [
-        "//apex_available:platform",
-        "//apex_available:anyapex",
+    defaults: [
+        "libprotobuf-cpp-lite-defaults",
+        "protobuf-lite-availability-defaults",
     ],
-    min_sdk_version: "29",
+}
+
+// Special version of the lite library for use in dependencies of the Bionic
+// linker. The linker does not support TLS within itself and depends on
+// Protobuf via libdebuggerd storing crash tombstones as protos.
+// TODO: b/329747255 - placeholder for the upgrade to Protobuf 22.5.
+cc_library_static {
+    name: "libprotobuf-cpp-lite-notls-for-linker",
+    visibility: [
+        "//system/core/debuggerd:__subpackages__",
+    ],
+    defaults: [
+        "libprotobuf-cpp-lite-tlsagnostic-defaults",
+        "absl_notls_defaults",
+    ],
 }
 
 // C++ full library
@@ -247,27 +297,10 @@ cc_library_static {
 cc_library {
     name: "libprotobuf-cpp-full",
     visibility: ["//visibility:public"],
-    defaults: ["libprotobuf-cpp-full-defaults"],
-    host_supported: true,
-    recovery_available: true,
-    vendor_available: true,
-    product_available: true,
-    target: {
-        android: {
-            static: {
-                enabled: false,
-            },
-        },
-        windows: {
-            enabled: true,
-        },
-    },
-    apex_available: [
-        "//apex_available:platform",
-        "com.android.appsearch",
-        "com.android.virt",
+    defaults: [
+        "libprotobuf-cpp-full-defaults",
+        "protobuf-full-availability-defaults",
     ],
-    min_sdk_version: "29",
 }
 
 cc_test_library {
