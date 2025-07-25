@@ -49,6 +49,8 @@ class EnumFieldGenerator : public FieldGenerator {
  public:
   explicit EnumFieldGenerator(
       const FieldDescriptor* descriptor, const Params& params);
+  EnumFieldGenerator(const EnumFieldGenerator&) = delete;
+  EnumFieldGenerator& operator=(const EnumFieldGenerator&) = delete;
   ~EnumFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -64,14 +66,14 @@ class EnumFieldGenerator : public FieldGenerator {
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
   std::vector<std::string> canonical_values_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EnumFieldGenerator);
 };
 
 class AccessorEnumFieldGenerator : public FieldGenerator {
  public:
   explicit AccessorEnumFieldGenerator(const FieldDescriptor* descriptor,
       const Params& params, int has_bit_index);
+  AccessorEnumFieldGenerator(const AccessorEnumFieldGenerator&) = delete;
+  AccessorEnumFieldGenerator& operator=(const AccessorEnumFieldGenerator&) = delete;
   ~AccessorEnumFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -87,14 +89,14 @@ class AccessorEnumFieldGenerator : public FieldGenerator {
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
   std::vector<std::string> canonical_values_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(AccessorEnumFieldGenerator);
 };
 
 class RepeatedEnumFieldGenerator : public FieldGenerator {
  public:
   explicit RepeatedEnumFieldGenerator(
       const FieldDescriptor* descriptor, const Params& params);
+  RepeatedEnumFieldGenerator(const RepeatedEnumFieldGenerator&) = delete;
+  RepeatedEnumFieldGenerator& operator=(const RepeatedEnumFieldGenerator&) = delete;
   ~RepeatedEnumFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -114,8 +116,6 @@ class RepeatedEnumFieldGenerator : public FieldGenerator {
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
   std::vector<std::string> canonical_values_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RepeatedEnumFieldGenerator);
 };
 
 }  // namespace javanano

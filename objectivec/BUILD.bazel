@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "objc_library")
 load("@rules_pkg//:mappings.bzl", "pkg_files", "strip_prefix")
+load("//conformance:defs.bzl", "conformance_test")
 
 objc_library(
     name = "objectivec",
@@ -87,8 +88,42 @@ objc_library(
         "GPBWireFormat.m",
         "GPBWrappers.pbobjc.m",
     ],
+    target_compatible_with = select({
+        "@platforms//os:macos": [],
+        "@platforms//os:ios": [],
+        "@platforms//os:tvos": [],
+        "@platforms//os:watchos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
     visibility = ["//visibility:public"],
 )
+
+################################################################################
+# Tests
+################################################################################
+
+conformance_test(
+    name = "conformance_test",
+    failure_list = "//conformance:failure_list_objc.txt",
+    testee = "//conformance:conformance_objc",
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+# -------------------------------------------------------------------
+# Current Version Check between Generator and Runtime Sources
+sh_test(
+    name = "check_version_stamps",
+    size = "small",
+    srcs = ["DevTools/check_version_stamps.sh"],
+    data = [
+        "GPBBootstrap.h",
+        "//src/google/protobuf/compiler/objectivec:file.cc",
+    ],
+)
+
+################################################################################
+# Distribution files
+################################################################################
 
 pkg_files(
     name = "dist_files",
@@ -104,7 +139,6 @@ pkg_files(
         "ProtocolBuffers_iOS.xcodeproj/**/*",
         "ProtocolBuffers_OSX.xcodeproj/**/*",
         "ProtocolBuffers_tvOS.xcodeproj/**/*",
-        "Tests/CocoaPods/**/*",
         "Tests/*.pddm",
         "Tests/*.txt",
         "Tests/*.plist",

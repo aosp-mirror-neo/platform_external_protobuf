@@ -35,12 +35,12 @@
 #include <map>
 #include <string>
 
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javanano/javanano_enum_field.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -57,7 +57,7 @@ void SetEnumVariables(const Params& params,
     RenameJavaKeywords(UnderscoresToCamelCase(descriptor));
   (*variables)["capitalized_name"] =
     RenameJavaKeywords(UnderscoresToCapitalizedCamelCase(descriptor));
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   if (params.use_reference_types_for_primitives()
       && !params.reftypes_primitive_enums()
       && !descriptor->is_repeated()) {
@@ -69,10 +69,10 @@ void SetEnumVariables(const Params& params,
   }
   (*variables)["repeated_default"] =
       "com.google.protobuf.nano.WireFormatNano.EMPTY_INT_ARRAY";
-  (*variables)["tag"] = SimpleItoa(internal::WireFormat::MakeTag(descriptor));
-  (*variables)["tag_size"] = SimpleItoa(
+  (*variables)["tag"] = absl::StrCat(internal::WireFormat::MakeTag(descriptor));
+  (*variables)["tag_size"] = absl::StrCat(
       internal::WireFormat::TagSize(descriptor->number(), descriptor->type()));
-  (*variables)["non_packed_tag"] = SimpleItoa(
+  (*variables)["non_packed_tag"] = absl::StrCat(
       internal::WireFormatLite::MakeTag(descriptor->number(),
           internal::WireFormat::WireTypeForFieldType(descriptor->type())));
   (*variables)["message_name"] = descriptor->containing_type()->name();

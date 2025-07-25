@@ -33,13 +33,15 @@
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
 #include <limits>
-#include <vector>
 
+#include <absl/strings/ascii.h>
+#include <absl/strings/escaping.h>
+#include <absl/strings/match.h>
+#include <absl/strings/substitute.h>
+#include <absl/log/absl_log.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
 #include <google/protobuf/compiler/javamicro/javamicro_params.h>
 #include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/substitute.h>
 
 namespace google {
 namespace protobuf {
@@ -112,10 +114,10 @@ std::string UnderscoresToCamelCase(const MethodDescriptor* method) {
 }
 
 std::string StripProto(const std::string& filename) {
-  if (HasSuffixString(filename, ".protodevel")) {
-    return StripSuffixString(filename, ".protodevel");
+  if (absl::EndsWith(filename, ".protodevel")) {
+    return std::string(absl::StripSuffix(filename, ".protodevel"));
   } else {
-    return StripSuffixString(filename, ".proto");
+    return std::string(absl::StripSuffix(filename, ".proto"));
   }
 }
 
@@ -192,9 +194,7 @@ std::string ClassName(const Params& params, const EnumDescriptor* descriptor) {
 }
 
 std::string FieldConstantName(const FieldDescriptor *field) {
-  std::string name = field->name() + "_FIELD_NUMBER";
-  UpperString(&name);
-  return name;
+  return absl::StrCat(absl::AsciiStrToUpper(field->name()), "_FIELD_NUMBER");
 }
 
 JavaType GetJavaType(FieldDescriptor::Type field_type) {
@@ -239,7 +239,7 @@ JavaType GetJavaType(FieldDescriptor::Type field_type) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return JAVATYPE_INT;
 }
 
@@ -259,7 +259,7 @@ const char* BoxedPrimitiveTypeName(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return NULL;
 }
 
@@ -277,15 +277,15 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
   // of FieldDescriptor to call.
   switch (field->cpp_type()) {
     case FieldDescriptor::CPPTYPE_INT32:
-      return SimpleItoa(field->default_value_int32());
+      return absl::StrCat(field->default_value_int32());
     case FieldDescriptor::CPPTYPE_UINT32:
       // Need to print as a signed int since Java has no unsigned.
-      return SimpleItoa(static_cast<int32>(field->default_value_uint32()));
+      return absl::StrCat(static_cast<int32>(field->default_value_uint32()));
     case FieldDescriptor::CPPTYPE_INT64:
-      return SimpleItoa(field->default_value_int64()) + "L";
+      return absl::StrCat(field->default_value_int64()) + "L";
     case FieldDescriptor::CPPTYPE_UINT64:
-      return SimpleItoa(static_cast<int64>(field->default_value_uint64())) +
-             "L";
+      return absl::StrCat(static_cast<int64>(field->default_value_uint64()),
+             "L");
     case FieldDescriptor::CPPTYPE_DOUBLE: {
       double value = field->default_value_double();
       if (value == std::numeric_limits<double>::infinity()) {
@@ -295,7 +295,7 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
       } else if (value != value) {
         return "Double.NaN";
       } else {
-        return SimpleDtoa(value) + "D";
+        return absl::StrCat(value, "D");
       }
     }
     case FieldDescriptor::CPPTYPE_FLOAT: {
@@ -307,7 +307,7 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
       } else if (value != value) {
         return "Float.NaN";
       } else {
-        return SimpleFtoa(value) + "F";
+        return absl::StrCat(value, "F");
       }
     }
     case FieldDescriptor::CPPTYPE_BOOL:
@@ -316,22 +316,22 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
       if (field->type() == FieldDescriptor::TYPE_BYTES) {
         if (field->has_default_value()) {
           // See comments in Internal.java for gory details.
-          return strings::Substitute(
+          return absl::Substitute(
             "com.google.protobuf.micro.ByteStringMicro.copyFromUtf8(\"$0\")",
-            CEscape(field->default_value_string()));
+            absl::CEscape(field->default_value_string()));
         } else {
           return "com.google.protobuf.micro.ByteStringMicro.EMPTY";
         }
       } else {
         if (AllAscii(field->default_value_string())) {
           // All chars are ASCII.  In this case CEscape() works fine.
-          return "\"" + CEscape(field->default_value_string()) + "\"";
+          return absl::StrCat("\"", absl::CEscape(field->default_value_string()), "\"");
         } else {
           // See comments in Internal.java for gory details.
           // BUG: Internal NOT SUPPORTED need to fix!!
-          return strings::Substitute(
+          return absl::Substitute(
             "com.google.protobuf.micro.Internal.stringDefaultValue(\"$0\")",
-            CEscape(field->default_value_string()));
+            absl::CEscape(field->default_value_string()));
         }
       }
 
@@ -346,7 +346,7 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return "";
 }
 

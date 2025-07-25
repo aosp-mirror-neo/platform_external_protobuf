@@ -55,6 +55,8 @@ namespace javanano {
 class EnumGenerator {
  public:
   explicit EnumGenerator(const EnumDescriptor* descriptor, const Params& params);
+  EnumGenerator(const EnumGenerator&) = delete;
+  EnumGenerator& operator=(const EnumGenerator&) = delete;
   ~EnumGenerator();
 
   void Generate(io::Printer* printer);
@@ -75,8 +77,6 @@ class EnumGenerator {
     const EnumValueDescriptor* canonical_value;
   };
   std::vector<Alias> aliases_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EnumGenerator);
 };
 
 }  // namespace javanano

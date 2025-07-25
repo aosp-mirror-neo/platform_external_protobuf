@@ -35,7 +35,7 @@
 
 #include <map>
 #include <set>
-#include <google/protobuf/stubs/strutil.h>
+#include <string>
 
 namespace google {
 namespace protobuf {

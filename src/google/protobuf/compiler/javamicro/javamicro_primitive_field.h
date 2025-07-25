@@ -47,6 +47,8 @@ namespace javamicro {
 class PrimitiveFieldGenerator : public FieldGenerator {
  public:
   explicit PrimitiveFieldGenerator(const FieldDescriptor* descriptor, const Params &params);
+  PrimitiveFieldGenerator(const PrimitiveFieldGenerator&) = delete;
+  PrimitiveFieldGenerator& operator=(const PrimitiveFieldGenerator&) = delete;
   ~PrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -61,13 +63,13 @@ class PrimitiveFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(PrimitiveFieldGenerator);
 };
 
 class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
  public:
   explicit RepeatedPrimitiveFieldGenerator(const FieldDescriptor* descriptor, const Params& params);
+  RepeatedPrimitiveFieldGenerator(const RepeatedPrimitiveFieldGenerator&) = delete;
+  RepeatedPrimitiveFieldGenerator& operator=(const RepeatedPrimitiveFieldGenerator&) = delete;
   ~RepeatedPrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -82,8 +84,6 @@ class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RepeatedPrimitiveFieldGenerator);
 };
 
 }  // namespace javamicro

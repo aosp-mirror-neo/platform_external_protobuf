@@ -32,14 +32,12 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-#include <string>
-
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javamicro/javamicro_params.h>
 #include <google/protobuf/compiler/javamicro/javamicro_enum.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -71,7 +69,7 @@ void EnumGenerator::Generate(io::Printer* printer) {
   for (int i = 0; i < canonical_values_.size(); i++) {
     printer->Print("public static final int $name$ = $canonical_value$;\n",
       "name", canonical_values_[i]->name(),
-      "canonical_value", SimpleItoa(canonical_values_[i]->number()));
+      "canonical_value", absl::StrCat(canonical_values_[i]->number()));
   }
 
   // -----------------------------------------------------------------
