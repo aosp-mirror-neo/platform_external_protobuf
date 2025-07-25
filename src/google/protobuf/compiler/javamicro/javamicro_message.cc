@@ -32,12 +32,14 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+#include "absl/strings/str_replace.h"
 #include <algorithm>
 #include <unordered_set>
+
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javamicro/javamicro_message.h>
 #include <google/protobuf/compiler/javamicro/javamicro_enum.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format.h>
@@ -84,8 +86,9 @@ const FieldDescriptor** SortFieldsByNumber(const Descriptor* descriptor) {
 // Get an identifier that uniquely identifies this type within the file.
 // This is used to declare static variables related to this type at the
 // outermost file scope.
-std::string UniqueFileScopeIdentifier(const Descriptor* descriptor) {
-  return "static_" + StringReplace(descriptor->full_name(), ".", "_", true);
+std::string UniqueFileScopeIdentifier(const Descriptor *descriptor) {
+  return absl::StrCat(
+      "static_", absl::StrReplaceAll(descriptor->full_name(), {{".", "_"}}));
 }
 
 // Returns true if the message type has any required fields.  If it doesn't,
@@ -165,7 +168,7 @@ void MessageGenerator::GenerateStaticVariableInitializers(
   }
 
   if (descriptor_->extension_count() != 0) {
-    GOOGLE_LOG(FATAL) << "Extensions not supported in MICRO_RUNTIME\n";
+    ABSL_LOG(FATAL) << "Extensions not supported in MICRO_RUNTIME\n";
   }
 }
 
@@ -177,7 +180,7 @@ void MessageGenerator::Generate(io::Printer* printer) {
 
   if ((descriptor_->extension_count() != 0)
       || (descriptor_->extension_range_count() != 0)) {
-    GOOGLE_LOG(FATAL) << "Extensions not supported in MICRO_RUNTIME\n";
+    ABSL_LOG(FATAL) << "Extensions not supported in MICRO_RUNTIME\n";
   }
 
   // Note: Fields (which will be emitted in the loop, below) may have the same names as fields in
@@ -209,7 +212,7 @@ void MessageGenerator::Generate(io::Printer* printer) {
     PrintFieldComment(printer, descriptor_->field(i));
     printer->Print("public static final int $constant_name$ = $number$;\n",
       "constant_name", FieldConstantName(descriptor_->field(i)),
-      "number", SimpleItoa(descriptor_->field(i)->number()));
+      "number", absl::StrCat(descriptor_->field(i)->number()));
     field_generators_.get(descriptor_->field(i)).GenerateMembers(printer);
     printer->Print("\n");
   }
@@ -232,7 +235,7 @@ GenerateMessageSerializationMethods(io::Printer* printer) {
     SortFieldsByNumber(descriptor_));
 
   if (descriptor_->extension_range_count() != 0) {
-    GOOGLE_LOG(FATAL) << "Extensions not supported in MICRO_RUNTIME\n";
+    ABSL_LOG(FATAL) << "Extensions not supported in MICRO_RUNTIME\n";
   }
 
   // writeTo only throws an exception if it contains one or more fields to write
@@ -331,7 +334,7 @@ void MessageGenerator::GenerateMergeFromMethods(io::Printer* printer) {
 
     printer->Print(
       "case $tag$: {\n",
-      "tag", SimpleItoa(tag));
+      "tag", absl::StrCat(tag));
     printer->Indent();
 
     field_generators_.get(field).GenerateParsingCode(printer);

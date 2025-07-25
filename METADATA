@@ -12,10 +12,10 @@ third_party {
     value: "https://github.com/protocolbuffers/protobuf"
   }
   # Also update the suffix in Android.bp when updating the version.
-  version: "v21.12"
-  last_upgrade_date { year: 2023 month: 04 day: 25 }
+  version: "v22.5"
+  last_upgrade_date { year: 2025 month: 6 day: 30 }
   license_type: NOTICE
   security {
-    tag: "NVD-CPE2.3:cpe:/a:google:protobuf:3.21.12"
+    tag: "NVD-CPE2.3:cpe:/a:google:protobuf:3.22.5"
   }
 }

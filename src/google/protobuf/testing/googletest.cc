@@ -31,15 +31,21 @@
 // Author: kenton@google.com (Kenton Varda)
 // emulates google3/testing/base/public/googletest.cc
 
+#include "google/protobuf/testing/googletest.h"
+
 #include <android-base/file.h>
-#include <google/protobuf/testing/googletest.h>
-#include <google/protobuf/testing/file.h>
-#include <google/protobuf/io/io_win32.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
+#include "google/protobuf/io/io_win32.h"
+#include "google/protobuf/testing/file.h"
 #ifdef _MSC_VER
 // #include <direct.h>
 #else
@@ -80,9 +86,9 @@ namespace {
 std::string GetTemporaryDirectoryName() {
   // Tests run under Bazel "should not" use /tmp. Bazel sets this environment
   // variable for tests to use instead.
-  char *from_environment = getenv("TEST_TMPDIR");
+  char* from_environment = getenv("TEST_TMPDIR");
   if (from_environment != NULL && from_environment[0] != '\0') {
-    return std::string(from_environment) + "/protobuf_tmpdir";
+    return absl::StrCat(from_environment, "/protobuf_tmpdir");
   }
 
   // tmpnam() is generally not considered safe but we're only using it for
@@ -114,13 +120,13 @@ std::string GetTemporaryDirectoryName() {
   }
   // On Win32, tmpnam() returns a file prefixed with '\', but which is supposed
   // to be used in the current working directory.  WTF?
-  if (HasPrefixString(result, "\\")) {
+  if (absl::StartsWith(result, "\\")) {
     result.erase(0, 1);
   }
   // The Win32 API accepts forward slashes as a path delimiter as long as the
   // path doesn't use the "\\?\" prefix.
   // Let's avoid confusion and use only forward slashes.
-  result = StringReplace(result, "\\", "/", true);
+  result = absl::StrReplaceAll(result, {{"\\", "/"}});
 #endif  // _WIN32
   return result;
 }
@@ -139,11 +145,12 @@ class TempDirDeleter {
   std::string GetTempDir() {
     if (name_.empty()) {
       name_ = GetTemporaryDirectoryName();
-      GOOGLE_CHECK(mkdir(name_.c_str(), 0777) == 0) << strerror(errno);
+      ABSL_CHECK(mkdir(name_.c_str(), 0777) == 0) << strerror(errno);
 
       // Stick a file in the directory that tells people what this is, in case
       // we abort and don't get a chance to delete it.
-      File::WriteStringToFileOrDie("", name_ + "/TEMP_DIR_FOR_PROTOBUF_TESTS");
+      File::WriteStringToFileOrDie(
+          "", absl::StrCat(name_, "/TEMP_DIR_FOR_PROTOBUF_TESTS"));
     }
     return name_;
   }
@@ -166,13 +173,13 @@ static int original_stdout_ = -1;
 static int original_stderr_ = -1;
 
 void CaptureTestStdout() {
-  GOOGLE_CHECK_EQ(original_stdout_, -1) << "Already capturing.";
+  ABSL_CHECK_EQ(original_stdout_, -1) << "Already capturing.";
 
-  stdout_capture_filename_ = TestTempDir() + "/captured_stdout";
+  stdout_capture_filename_ = absl::StrCat(TestTempDir(), "/captured_stdout");
 
   int fd = open(stdout_capture_filename_.c_str(),
                 O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0777);
-  GOOGLE_CHECK(fd >= 0) << "open: " << strerror(errno);
+  ABSL_CHECK(fd >= 0) << "open: " << strerror(errno);
 
   original_stdout_ = dup(1);
   close(1);
@@ -181,13 +188,13 @@ void CaptureTestStdout() {
 }
 
 void CaptureTestStderr() {
-  GOOGLE_CHECK_EQ(original_stderr_, -1) << "Already capturing.";
+  ABSL_CHECK_EQ(original_stderr_, -1) << "Already capturing.";
 
-  stderr_capture_filename_ = TestTempDir() + "/captured_stderr";
+  stderr_capture_filename_ = absl::StrCat(TestTempDir(), "/captured_stderr");
 
   int fd = open(stderr_capture_filename_.c_str(),
                 O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0777);
-  GOOGLE_CHECK(fd >= 0) << "open: " << strerror(errno);
+  ABSL_CHECK(fd >= 0) << "open: " << strerror(errno);
 
   original_stderr_ = dup(2);
   close(2);
@@ -196,7 +203,7 @@ void CaptureTestStderr() {
 }
 
 std::string GetCapturedTestStdout() {
-  GOOGLE_CHECK_NE(original_stdout_, -1) << "Not capturing.";
+  ABSL_CHECK_NE(original_stdout_, -1) << "Not capturing.";
 
   close(1);
   dup2(original_stdout_, 1);
@@ -211,7 +218,7 @@ std::string GetCapturedTestStdout() {
 }
 
 std::string GetCapturedTestStderr() {
-  GOOGLE_CHECK_NE(original_stderr_, -1) << "Not capturing.";
+  ABSL_CHECK_NE(original_stderr_, -1) << "Not capturing.";
 
   close(2);
   dup2(original_stderr_, 2);
@@ -223,33 +230,6 @@ std::string GetCapturedTestStderr() {
   remove(stderr_capture_filename_.c_str());
 
   return result;
-}
-
-ScopedMemoryLog* ScopedMemoryLog::active_log_ = NULL;
-
-ScopedMemoryLog::ScopedMemoryLog() {
-  GOOGLE_CHECK(active_log_ == NULL);
-  active_log_ = this;
-  old_handler_ = SetLogHandler(&HandleLog);
-}
-
-ScopedMemoryLog::~ScopedMemoryLog() {
-  SetLogHandler(old_handler_);
-  active_log_ = NULL;
-}
-
-const std::vector<std::string>& ScopedMemoryLog::GetMessages(LogLevel level) {
-  GOOGLE_CHECK(level == ERROR ||
-               level == WARNING);
-  return messages_[level];
-}
-
-void ScopedMemoryLog::HandleLog(LogLevel level, const char* filename, int line,
-                                const std::string& message) {
-  GOOGLE_CHECK(active_log_ != NULL);
-  if (level == ERROR || level == WARNING) {
-    active_log_->messages_[level].push_back(message);
-  }
 }
 
 namespace {

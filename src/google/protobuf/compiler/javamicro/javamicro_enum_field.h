@@ -47,6 +47,8 @@ namespace javamicro {
 class EnumFieldGenerator : public FieldGenerator {
  public:
   explicit EnumFieldGenerator(const FieldDescriptor* descriptor, const Params& params);
+  EnumFieldGenerator(const EnumFieldGenerator&) = delete;
+  EnumFieldGenerator& operator=(const EnumFieldGenerator&) = delete;
   ~EnumFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -61,14 +63,14 @@ class EnumFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EnumFieldGenerator);
 };
 
 class RepeatedEnumFieldGenerator : public FieldGenerator {
  public:
   explicit RepeatedEnumFieldGenerator(const FieldDescriptor* descriptor, const Params& params);
   ~RepeatedEnumFieldGenerator();
+  RepeatedEnumFieldGenerator(const RepeatedEnumFieldGenerator&) = delete;
+  RepeatedEnumFieldGenerator& operator=(const RepeatedEnumFieldGenerator&) = delete;
 
   // implements FieldGenerator ---------------------------------------
   void GenerateMembers(io::Printer* printer) const;
@@ -82,8 +84,6 @@ class RepeatedEnumFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RepeatedEnumFieldGenerator);
 };
 
 }  // namespace javamicro

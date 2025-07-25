@@ -32,15 +32,18 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+#include <iterator>
 #include <limits>
 #include <unordered_set>
 #include <vector>
 
+#include <absl/strings/ascii.h>
+#include <absl/strings/match.h>
+#include <absl/strings/strip.h>
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/compiler/javanano/javanano_params.h>
 #include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/substitute.h>
 
 namespace google {
 namespace protobuf {
@@ -72,7 +75,7 @@ class RenameKeywords {
       "false", "null", "true"
     };
 
-    for (int i = 0; i < GOOGLE_ARRAYSIZE(kJavaKeywordsList); i++) {
+    for (int i = 0; i < std::size(kJavaKeywordsList); i++) {
       java_keywords_set_.insert(kJavaKeywordsList[i]);
     }
   }
@@ -167,10 +170,10 @@ std::string RenameJavaKeywords(const std::string& input) {
 }
 
 std::string StripProto(const std::string& filename) {
-  if (HasSuffixString(filename, ".protodevel")) {
-    return StripSuffixString(filename, ".protodevel");
+  if (absl::EndsWith(filename, ".protodevel")) {
+    return std::string(absl::StripSuffix(filename, ".protodevel"));
   } else {
-    return StripSuffixString(filename, ".proto");
+    return std::string(absl::StripSuffix(filename, ".proto"));
   }
 }
 
@@ -269,13 +272,12 @@ std::string ClassName(const Params& params, const EnumDescriptor* descriptor) {
 }
 
 std::string FieldConstantName(const FieldDescriptor *field) {
-  std::string name = field->name() + "_FIELD_NUMBER";
-  UpperString(&name);
-  return name;
+  return absl::StrCat(absl::AsciiStrToUpper(field->name()), "_FIELD_NUMBER");
 }
 
 std::string FieldDefaultConstantName(const FieldDescriptor *field) {
-  return "_" + RenameJavaKeywords(UnderscoresToCamelCase(field)) + "Default";
+  return absl::StrCat(
+      "_", RenameJavaKeywords(UnderscoresToCamelCase(field)), "Default");
 }
 
 void PrintFieldComment(io::Printer* printer, const FieldDescriptor* field) {
@@ -336,7 +338,7 @@ JavaType GetJavaType(FieldDescriptor::Type field_type) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return JAVATYPE_INT;
 }
 
@@ -356,7 +358,7 @@ std::string PrimitiveTypeName(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -376,7 +378,7 @@ std::string BoxedPrimitiveTypeName(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -396,7 +398,7 @@ std::string EmptyArrayName(const Params& params, const FieldDescriptor* field) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -417,15 +419,15 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
   // of FieldDescriptor to call.
   switch (field->cpp_type()) {
     case FieldDescriptor::CPPTYPE_INT32:
-      return SimpleItoa(field->default_value_int32());
+      return absl::StrCat(field->default_value_int32());
     case FieldDescriptor::CPPTYPE_UINT32:
       // Need to print as a signed int since Java has no unsigned.
-      return SimpleItoa(static_cast<int32>(field->default_value_uint32()));
+      return absl::StrCat(static_cast<int32>(field->default_value_uint32()));
     case FieldDescriptor::CPPTYPE_INT64:
-      return SimpleItoa(field->default_value_int64()) + "L";
+      return absl::StrCat(field->default_value_int64()) + "L";
     case FieldDescriptor::CPPTYPE_UINT64:
-      return SimpleItoa(static_cast<int64>(field->default_value_uint64())) +
-             "L";
+      return absl::StrCat(static_cast<int64>(field->default_value_uint64()),
+             "L");
     case FieldDescriptor::CPPTYPE_DOUBLE: {
       double value = field->default_value_double();
       if (value == std::numeric_limits<double>::infinity()) {
@@ -435,7 +437,7 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
       } else if (value != value) {
         return "Double.NaN";
       } else {
-        return SimpleDtoa(value) + "D";
+        return absl::StrCat(value, "D");
       }
     }
     case FieldDescriptor::CPPTYPE_FLOAT: {
@@ -447,7 +449,7 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
       } else if (value != value) {
         return "Float.NaN";
       } else {
-        return SimpleFtoa(value) + "F";
+        return absl::StrCat(value, "F");
       }
     }
     case FieldDescriptor::CPPTYPE_BOOL:
@@ -475,7 +477,7 @@ std::string DefaultValue(const Params& params, const FieldDescriptor* field) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -519,10 +521,7 @@ static const char* kBitMasks[] = {
 };
 
 std::string GetBitFieldName(int index) {
-  std::string var_name = "bitField";
-  var_name += SimpleItoa(index);
-  var_name += "_";
-  return var_name;
+  return absl::StrCat("bitField", index, "_");
 }
 
 std::string GetBitFieldNameForBit(int bit_index) {

@@ -32,6 +32,9 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+#include <absl/log/absl_log.h>
+#include <absl/strings/str_replace.h>
+#include <absl/strings/str_split.h>
 #include <google/protobuf/compiler/javamicro/javamicro_params.h>
 #include <google/protobuf/compiler/javamicro/javamicro_generator.h>
 #include <google/protobuf/compiler/javamicro/javamicro_file.h>
@@ -39,7 +42,6 @@
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -78,10 +80,10 @@ bool JavaMicroGenerator::Generate(const FileDescriptor* file,
                              std::string* error) const {
   std::vector<std::pair<std::string, std::string> > options;
 
-//  GOOGLE_LOG(INFO) << "wink: JavaMicroGenerator::Generate INFO";
-//  GOOGLE_LOG(WARNING) << "wink: JavaMicroGenerator::Generate WARNING";
-//  GOOGLE_LOG(ERROR) << "wink: JavaMicroGenerator::Generate ERROR";
-//  GOOGLE_LOG(FATAL) << "wink: JavaMicroGenerator::Generate";
+//  ABSL_LOG(INFO) << "wink: JavaMicroGenerator::Generate INFO";
+//  ABSL_LOG(WARNING) << "wink: JavaMicroGenerator::Generate WARNING";
+//  ABSL_LOG(ERROR) << "wink: JavaMicroGenerator::Generate ERROR";
+//  ABSL_LOG(FATAL) << "wink: JavaMicroGenerator::Generate";
 
   ParseGeneratorParameter(parameter, &options);
 
@@ -98,8 +100,8 @@ bool JavaMicroGenerator::Generate(const FileDescriptor* file,
 
   // Replace any existing options with ones from command line
   for (int i = 0; i < options.size(); i++) {
-    // GOOGLE_LOG(WARNING) << "first=" << options[i].first
-    //                     << " second=" << options[i].second;
+    // ABSL_LOG(WARNING) << "first=" << options[i].first
+    //                   << " second=" << options[i].second;
     if (options[i].first == "output_list_file") {
       output_list_file = options[i].second;
     } else if (options[i].first == "opt") {
@@ -113,8 +115,7 @@ bool JavaMicroGenerator::Generate(const FileDescriptor* file,
         return false;
       }
     } else if (options[i].first == "java_package") {
-        std::vector<std::string> parts;
-        SplitStringUsing(options[i].second, "|", &parts);
+        std::vector<std::string> parts = absl::StrSplit(options[i].second, "|");
         if (parts.size() != 2) {
           *error = "Bad java_package, expecting filename|PackageName found '"
             + options[i].second + "'";
@@ -122,8 +123,7 @@ bool JavaMicroGenerator::Generate(const FileDescriptor* file,
         }
         params.set_java_package(parts[0], parts[1]);
     } else if (options[i].first == "java_outer_classname") {
-        std::vector<std::string> parts;
-        SplitStringUsing(options[i].second, "|", &parts);
+        std::vector<std::string> parts = absl::StrSplit(options[i].second, "|");
         if (parts.size() != 2) {
           *error = "Bad java_outer_classname, "
                    "expecting filename|ClassName found '"
@@ -141,22 +141,22 @@ bool JavaMicroGenerator::Generate(const FileDescriptor* file,
   }
 
 #if 0
-  GOOGLE_LOG(WARNING) << "optimization()=" << params.optimization();
-  GOOGLE_LOG(WARNING) << "java_multiple_files()=" << params.java_multiple_files();
-  GOOGLE_LOG(WARNING) << "java_use_vector()=" << params.java_use_vector();
+  ABSL_LOG(WARNING) << "optimization()=" << params.optimization();
+  ABSL_LOG(WARNING) << "java_multiple_files()=" << params.java_multiple_files();
+  ABSL_LOG(WARNING) << "java_use_vector()=" << params.java_use_vector();
 
-  GOOGLE_LOG(WARNING) << "----------";
+  ABSL_LOG(WARNING) << "----------";
   for (Params::NameMap::const_iterator it = params.java_packages().begin();
        it != params.java_packages().end();
        ++it) {
-    GOOGLE_LOG(WARNING) << "cn.filename=" << it->first << " package=" << it->second;
+    ABSL_LOG(WARNING) << "cn.filename=" << it->first << " package=" << it->second;
   }
   for (Params::NameMap::const_iterator it = params.java_outer_classnames().begin();
        it != params.java_outer_classnames().end();
        ++it) {
-    GOOGLE_LOG(WARNING) << "cn.filename=" << it->first << " classname=" << it->second;
+    ABSL_LOG(WARNING) << "cn.filename=" << it->first << " classname=" << it->second;
   }
-  GOOGLE_LOG(WARNING) << "==========";
+  ABSL_LOG(WARNING) << "==========";
 
 #endif
 
@@ -168,7 +168,7 @@ bool JavaMicroGenerator::Generate(const FileDescriptor* file,
   }
 
   std::string package_dir =
-    StringReplace(file_generator.java_package(), ".", "/", true);
+      absl::StrReplaceAll(file_generator.java_package(), {{".", "/"}});
   if (!package_dir.empty()) package_dir += "/";
 
   std::vector<std::string> all_files;

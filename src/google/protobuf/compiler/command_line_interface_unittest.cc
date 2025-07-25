@@ -38,6 +38,10 @@
 
 #include <cstdint>
 
+#include "absl/log/absl_check.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
@@ -45,31 +49,32 @@
 #include <string>
 #include <vector>
 
-#include <google/protobuf/stubs/stringprintf.h>
-#include <google/protobuf/testing/file.h>
-#include <google/protobuf/testing/file.h>
-#include <google/protobuf/testing/file.h>
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/test_util2.h>
-#include <google/protobuf/unittest.pb.h>
-#include <google/protobuf/unittest_custom_options.pb.h>
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/testing/googletest.h>
+#include "google/protobuf/testing/file.h"
+#include "google/protobuf/testing/file.h"
+#include "google/protobuf/testing/file.h"
+#include "google/protobuf/any.pb.h"
+#include "google/protobuf/descriptor.pb.h"
+#include "google/protobuf/testing/googletest.h"
 #include <gtest/gtest.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/substitute.h>
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/command_line_interface.h>
-#include <google/protobuf/compiler/mock_code_generator.h>
-#include <google/protobuf/compiler/subprocess.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/io/io_win32.h>
-#include <google/protobuf/io/printer.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-
+#include "absl/status/status.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/substitute.h"
+#include "google/protobuf/compiler/code_generator.h"
+#include "google/protobuf/compiler/command_line_interface.h"
+#include "google/protobuf/compiler/cpp/names.h"
+#include "google/protobuf/compiler/mock_code_generator.h"
+#include "google/protobuf/compiler/subprocess.h"
+#include "google/protobuf/io/io_win32.h"
+#include "google/protobuf/io/printer.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/test_util2.h"
+#include "google/protobuf/unittest.pb.h"
+#include "google/protobuf/unittest_custom_options.pb.h"
 
 // Must be included last.
-#include <google/protobuf/port_def.inc>
+#include "google/protobuf/port_def.inc"
 
 namespace google {
 namespace protobuf {
@@ -119,10 +124,10 @@ class CommandLineInterfaceTest : public testing::Test {
 
   // Create a temp file within temp_directory_ with the given name.
   // The containing directory is also created if necessary.
-  void CreateTempFile(const std::string& name, const std::string& contents);
+  void CreateTempFile(absl::string_view name, absl::string_view contents);
 
   // Create a subdirectory within temp_directory_.
-  void CreateTempDir(const std::string& name);
+  void CreateTempDir(absl::string_view name);
 
 #ifdef PROTOBUF_OPENSOURCE
   // Change working directory to temp directory.
@@ -208,14 +213,13 @@ class CommandLineInterfaceTest : public testing::Test {
 #endif  // _WIN32
 
 
-  void ReadDescriptorSet(const std::string& filename,
+  void ReadDescriptorSet(absl::string_view filename,
                          FileDescriptorSet* descriptor_set);
 
-  void WriteDescriptorSet(const std::string& filename,
+  void WriteDescriptorSet(absl::string_view filename,
                           const FileDescriptorSet* descriptor_set);
 
-  void ExpectFileContent(const std::string& filename,
-                         const std::string& content);
+  void ExpectFileContent(absl::string_view filename, absl::string_view content);
 
   // The default code generators support all features. Use this to create a
   // code generator that omits the given feature(s).
@@ -276,7 +280,7 @@ class CommandLineInterfaceTest::NullCodeGenerator : public CodeGenerator {
 // ===================================================================
 
 void CommandLineInterfaceTest::SetUp() {
-  temp_directory_ = TestTempDir() + "/proto2_cli_test_temp";
+  temp_directory_ = absl::StrCat(TestTempDir(), "/proto2_cli_test_temp");
 
   // If the temp directory already exists, it must be left over from a
   // previous run.  Delete it.
@@ -285,7 +289,7 @@ void CommandLineInterfaceTest::SetUp() {
   }
 
   // Create the temp directory.
-  GOOGLE_CHECK_OK(File::CreateDir(temp_directory_, 0777));
+  ABSL_CHECK_OK(File::CreateDir(temp_directory_, 0777));
 
   // Register generators.
   CodeGenerator* generator = new MockCodeGenerator("test_generator");
@@ -319,7 +323,7 @@ void CommandLineInterfaceTest::TearDown() {
 }
 
 void CommandLineInterfaceTest::Run(const std::string& command) {
-  RunWithArgs(Split(command, " ", true));
+  RunWithArgs(absl::StrSplit(command, " ", absl::SkipEmpty()));
 }
 
 void CommandLineInterfaceTest::RunWithArgs(std::vector<std::string> args) {
@@ -349,7 +353,7 @@ void CommandLineInterfaceTest::RunWithArgs(std::vector<std::string> args) {
         "test_plugin.exe",        // Other Win32 (MSVC)
         "test_plugin",            // Unix
     };
-    for (int i = 0; i < GOOGLE_ARRAYSIZE(possible_paths); i++) {
+    for (int i = 0; i < ABSL_ARRAYSIZE(possible_paths); i++) {
       if (access(possible_paths[i], F_OK) == 0) {
         plugin_path = possible_paths[i];
         break;
@@ -357,18 +361,19 @@ void CommandLineInterfaceTest::RunWithArgs(std::vector<std::string> args) {
     }
 #endif
 
-    if (plugin_path.empty()) {
-      GOOGLE_LOG(ERROR)
-          << "Plugin executable not found.  Plugin tests are likely to fail.";
+    if (plugin_path.empty() || !FileExists(plugin_path)) {
+      ABSL_LOG(ERROR)
+          << "Plugin executable not found.  Plugin tests are likely to fail."
+          << plugin_path;
     } else {
-      args.push_back("--plugin=prefix-gen-plug=" + plugin_path);
+      args.push_back(absl::StrCat("--plugin=prefix-gen-plug=", plugin_path));
     }
   }
 
   std::unique_ptr<const char*[]> argv(new const char*[args.size()]);
 
-  for (int i = 0; i < args.size(); i++) {
-    args[i] = StringReplace(args[i], "$tmpdir", temp_directory_, true);
+  for (size_t i = 0; i < args.size(); i++) {
+    args[i] = absl::StrReplaceAll(args[i], {{"$tmpdir", temp_directory_}});
     argv[i] = args[i].c_str();
   }
 
@@ -390,28 +395,28 @@ void CommandLineInterfaceTest::RunWithArgs(std::vector<std::string> args) {
 
 // -------------------------------------------------------------------
 
-void CommandLineInterfaceTest::CreateTempFile(const std::string& name,
-                                              const std::string& contents) {
+void CommandLineInterfaceTest::CreateTempFile(absl::string_view name,
+                                              absl::string_view contents) {
   // Create parent directory, if necessary.
   std::string::size_type slash_pos = name.find_last_of('/');
   if (slash_pos != std::string::npos) {
-    std::string dir = name.substr(0, slash_pos);
-    if (!FileExists(temp_directory_ + "/" + dir)) {
-      GOOGLE_CHECK_OK(File::RecursivelyCreateDir(temp_directory_ + "/" + dir,
-                                          0777));
+    absl::string_view dir = name.substr(0, slash_pos);
+    if (!FileExists(absl::StrCat(temp_directory_, "/", dir))) {
+      ABSL_CHECK_OK(File::RecursivelyCreateDir(
+          absl::StrCat(temp_directory_, "/", dir), 0777));
     }
   }
 
   // Write file.
-  std::string full_name = temp_directory_ + "/" + name;
-  GOOGLE_CHECK_OK(File::SetContents(
-      full_name, StringReplace(contents, "$tmpdir", temp_directory_, true),
+  std::string full_name = absl::StrCat(temp_directory_, "/", name);
+  ABSL_CHECK_OK(File::SetContents(
+      full_name, absl::StrReplaceAll(contents, {{"$tmpdir", temp_directory_}}),
       true));
 }
 
-void CommandLineInterfaceTest::CreateTempDir(const std::string& name) {
-  GOOGLE_CHECK_OK(File::RecursivelyCreateDir(temp_directory_ + "/" + name,
-                                      0777));
+void CommandLineInterfaceTest::CreateTempDir(absl::string_view name) {
+  ABSL_CHECK_OK(File::RecursivelyCreateDir(
+      absl::StrCat(temp_directory_, "/", name), 0777));
 }
 
 // -------------------------------------------------------------------
@@ -424,7 +429,7 @@ void CommandLineInterfaceTest::ExpectNoErrors() {
 void CommandLineInterfaceTest::ExpectErrorText(
     const std::string& expected_text) {
   EXPECT_NE(0, return_code_);
-  EXPECT_EQ(StringReplace(expected_text, "$tmpdir", temp_directory_, true),
+  EXPECT_EQ(absl::StrReplaceAll(expected_text, {{"$tmpdir", temp_directory_}}),
             error_text_);
 }
 
@@ -459,9 +464,9 @@ void CommandLineInterfaceTest::ExpectGenerated(
     const std::string& generator_name, const std::string& parameter,
     const std::string& proto_name, const std::string& message_name,
     const std::string& output_directory) {
-  MockCodeGenerator::ExpectGenerated(generator_name, parameter, "", proto_name,
-                                     message_name, proto_name,
-                                     temp_directory_ + "/" + output_directory);
+  MockCodeGenerator::ExpectGenerated(
+      generator_name, parameter, "", proto_name, message_name, proto_name,
+      absl::StrCat(temp_directory_, "/", output_directory));
 }
 
 void CommandLineInterfaceTest::ExpectGeneratedWithMultipleInputs(
@@ -496,10 +501,10 @@ void CommandLineInterfaceTest::ExpectNullCodeGeneratorCalled(
 
 
 void CommandLineInterfaceTest::ReadDescriptorSet(
-    const std::string& filename, FileDescriptorSet* descriptor_set) {
-  std::string path = temp_directory_ + "/" + filename;
+    absl::string_view filename, FileDescriptorSet* descriptor_set) {
+  std::string path = absl::StrCat(temp_directory_, "/", filename);
   std::string file_contents;
-  GOOGLE_CHECK_OK(File::GetContents(path, &file_contents, true));
+  ABSL_CHECK_OK(File::GetContents(path, &file_contents, true));
 
   if (!descriptor_set->ParseFromString(file_contents)) {
     FAIL() << "Could not parse file contents: " << path;
@@ -507,9 +512,9 @@ void CommandLineInterfaceTest::ReadDescriptorSet(
 }
 
 void CommandLineInterfaceTest::WriteDescriptorSet(
-    const std::string& filename, const FileDescriptorSet* descriptor_set) {
+    absl::string_view filename, const FileDescriptorSet* descriptor_set) {
   std::string binary_proto;
-  GOOGLE_CHECK(descriptor_set->SerializeToString(&binary_proto));
+  ABSL_CHECK(descriptor_set->SerializeToString(&binary_proto));
   CreateTempFile(filename, binary_proto);
 }
 
@@ -531,13 +536,13 @@ void CommandLineInterfaceTest::ExpectCapturedStderrSubstringWithZeroReturnCode(
   EXPECT_PRED_FORMAT2(testing::IsSubstring, expected_substring, error_text_);
 }
 
-void CommandLineInterfaceTest::ExpectFileContent(const std::string& filename,
-                                                 const std::string& content) {
-  std::string path = temp_directory_ + "/" + filename;
+void CommandLineInterfaceTest::ExpectFileContent(absl::string_view filename,
+                                                 absl::string_view content) {
+  std::string path = absl::StrCat(temp_directory_, "/", filename);
   std::string file_contents;
-  GOOGLE_CHECK_OK(File::GetContents(path, &file_contents, true));
+  ABSL_CHECK_OK(File::GetContents(path, &file_contents, true));
 
-  EXPECT_EQ(StringReplace(content, "$tmpdir", temp_directory_, true),
+  EXPECT_EQ(absl::StrReplaceAll(content, {{"$tmpdir", temp_directory_}}),
             file_contents);
 }
 
@@ -789,6 +794,7 @@ TEST_F(CommandLineInterfaceTest, MultipleInputsWithImport) {
                                     "bar.proto", "Bar");
 }
 
+
 TEST_F(CommandLineInterfaceTest, MultipleInputsWithImport_DescriptorSetIn) {
   // Test parsing multiple input files with an import of a separate file.
   FileDescriptorSet file_descriptor_set;
@@ -825,11 +831,12 @@ TEST_F(CommandLineInterfaceTest, MultipleInputsWithImport_DescriptorSetIn) {
   field->set_number(1);
 
   WriteDescriptorSet("baz_and_bat.bin", &file_descriptor_set);
-  Run(strings::Substitute(
+  Run(absl::Substitute(
       "protocol_compiler --test_out=$$tmpdir --plug_out=$$tmpdir "
       "--descriptor_set_in=$0 foo.proto bar.proto",
-      std::string("$tmpdir/foo_and_bar.bin") +
-          CommandLineInterface::kPathSeparator + "$tmpdir/baz_and_bat.bin"));
+      absl::StrCat("$tmpdir/foo_and_bar.bin",
+                   CommandLineInterface::kPathSeparator,
+                   "$tmpdir/baz_and_bat.bin")));
 
   ExpectNoErrors();
   ExpectGeneratedWithMultipleInputs("test_generator", "foo.proto,bar.proto",
@@ -841,11 +848,12 @@ TEST_F(CommandLineInterfaceTest, MultipleInputsWithImport_DescriptorSetIn) {
   ExpectGeneratedWithMultipleInputs("test_plugin", "foo.proto,bar.proto",
                                     "bar.proto", "Bar");
 
-  Run(strings::Substitute(
+  Run(absl::Substitute(
       "protocol_compiler --test_out=$$tmpdir --plug_out=$$tmpdir "
       "--descriptor_set_in=$0 baz.proto bat.proto",
-      std::string("$tmpdir/foo_and_bar.bin") +
-          CommandLineInterface::kPathSeparator + "$tmpdir/baz_and_bat.bin"));
+      absl::StrCat("$tmpdir/foo_and_bar.bin",
+                   CommandLineInterface::kPathSeparator,
+                   "$tmpdir/baz_and_bat.bin")));
 
   ExpectNoErrors();
   ExpectGeneratedWithMultipleInputs("test_generator", "baz.proto,bat.proto",
@@ -899,11 +907,12 @@ TEST_F(CommandLineInterfaceTest,
   field->set_number(1);
   WriteDescriptorSet("foo_and_baz.bin", &file_descriptor_set);
 
-  Run(strings::Substitute(
+  Run(absl::Substitute(
       "protocol_compiler --test_out=$$tmpdir --plug_out=$$tmpdir "
       "--descriptor_set_in=$0 bar.proto",
-      std::string("$tmpdir/foo_and_bar.bin") +
-          CommandLineInterface::kPathSeparator + "$tmpdir/foo_and_baz.bin"));
+      absl::StrCat("$tmpdir/foo_and_bar.bin",
+                   CommandLineInterface::kPathSeparator,
+                   "$tmpdir/foo_and_baz.bin")));
 
   ExpectNoErrors();
   ExpectGenerated("test_generator", "", "bar.proto", "Bar");
@@ -1305,7 +1314,7 @@ TEST_F(CommandLineInterfaceTest, ColonDelimitedPath) {
                  "}\n");
   CreateTempFile("b/foo.proto", "this should not be parsed\n");
 
-  Run(strings::Substitute(
+  Run(absl::Substitute(
       "protocol_compiler --test_out=$$tmpdir --proto_path=$0 foo.proto",
       std::string("$tmpdir/a") + CommandLineInterface::kPathSeparator +
           "$tmpdir/b"));
@@ -2085,12 +2094,13 @@ TEST_F(CommandLineInterfaceTest, OutputWriteError) {
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
   // Windows with MSVCRT.dll produces EPERM instead of EISDIR.
-  if (HasAlternateErrorSubstring(output_file + ": Permission denied")) {
+  if (HasAlternateErrorSubstring(
+          absl::StrCat(output_file, ": Permission denied"))) {
     return;
   }
 #endif
 
-  ExpectErrorSubstring(output_file + ": Is a directory");
+  ExpectErrorSubstring(absl::StrCat(output_file, ": Is a directory"));
 }
 
 TEST_F(CommandLineInterfaceTest, PluginOutputWriteError) {
@@ -2109,12 +2119,13 @@ TEST_F(CommandLineInterfaceTest, PluginOutputWriteError) {
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
   // Windows with MSVCRT.dll produces EPERM instead of EISDIR.
-  if (HasAlternateErrorSubstring(output_file + ": Permission denied")) {
+  if (HasAlternateErrorSubstring(
+          absl::StrCat(output_file, ": Permission denied"))) {
     return;
   }
 #endif
 
-  ExpectErrorSubstring(output_file + ": Is a directory");
+  ExpectErrorSubstring(absl::StrCat(output_file, ": Is a directory"));
 }
 
 TEST_F(CommandLineInterfaceTest, OutputDirectoryNotFoundError) {
@@ -2229,7 +2240,7 @@ TEST_F(CommandLineInterfaceTest, PluginReceivesSourceCodeInfo) {
   Run("protocol_compiler --plug_out=$tmpdir --proto_path=$tmpdir foo.proto");
 
   ExpectErrorSubstring(
-      "Saw message type MockCodeGenerator_HasSourceCodeInfo: 1.");
+      "Saw message type MockCodeGenerator_HasSourceCodeInfo: true.");
 }
 
 TEST_F(CommandLineInterfaceTest, PluginReceivesJsonName) {
@@ -2241,7 +2252,7 @@ TEST_F(CommandLineInterfaceTest, PluginReceivesJsonName) {
 
   Run("protocol_compiler --plug_out=$tmpdir --proto_path=$tmpdir foo.proto");
 
-  ExpectErrorSubstring("Saw json_name: 1");
+  ExpectErrorSubstring("Saw json_name: true");
 }
 
 TEST_F(CommandLineInterfaceTest, PluginReceivesCompilerVersion) {
@@ -2253,9 +2264,9 @@ TEST_F(CommandLineInterfaceTest, PluginReceivesCompilerVersion) {
 
   Run("protocol_compiler --plug_out=$tmpdir --proto_path=$tmpdir foo.proto");
 
-  ExpectErrorSubstring(StringPrintf("Saw compiler_version: %d %s",
-                                    GOOGLE_PROTOBUF_VERSION,
-                                    GOOGLE_PROTOBUF_VERSION_SUFFIX));
+  ExpectErrorSubstring(absl::StrFormat("Saw compiler_version: %d %s",
+                                       GOOGLE_PROTOBUF_VERSION,
+                                       GOOGLE_PROTOBUF_VERSION_SUFFIX));
 }
 
 TEST_F(CommandLineInterfaceTest, GeneratorPluginNotFound) {
@@ -2270,8 +2281,9 @@ TEST_F(CommandLineInterfaceTest, GeneratorPluginNotFound) {
       "--proto_path=$tmpdir error.proto");
 
 #ifdef _WIN32
-  ExpectErrorSubstring("--badplug_out: prefix-gen-badplug: " +
-                       Subprocess::Win32ErrorMessage(ERROR_FILE_NOT_FOUND));
+  ExpectErrorSubstring(
+      absl::StrCat("--badplug_out: prefix-gen-badplug: ",
+                   Subprocess::Win32ErrorMessage(ERROR_FILE_NOT_FOUND)));
 #else
   // Error written to stdout by child process after exec() fails.
   ExpectErrorSubstring("no_such_file: program not found or is not executable");
@@ -2453,6 +2465,79 @@ TEST_F(CommandLineInterfaceTest, Proto3OptionalDisallowedNoCodegenSupport) {
       "optional fields in proto3");
 }
 
+TEST_F(CommandLineInterfaceTest, ReservedFieldNumbersFail) {
+  CreateTempFile("foo.proto",
+                 R"(
+syntax = "proto2";
+message Foo {
+  optional int32 i = 19123;
+}
+)");
+
+  Run("protocol_compiler --test_out=$tmpdir --proto_path=$tmpdir foo.proto");
+
+  ExpectErrorSubstring(
+      "foo.proto: Field numbers 19000 through 19999 are reserved for the "
+      "protocol buffer library implementation.");
+}
+
+TEST_F(CommandLineInterfaceTest, ReservedFieldNumbersFailAsOneof) {
+  CreateTempFile("foo.proto",
+                 R"(
+syntax = "proto2";
+message Foo {
+  oneof one {
+    int32 i = 19123;
+  }
+}
+)");
+
+  Run("protocol_compiler --test_out=$tmpdir --proto_path=$tmpdir foo.proto");
+
+  ExpectErrorSubstring(
+      "foo.proto: Field numbers 19000 through 19999 are reserved for the "
+      "protocol buffer library implementation.");
+}
+
+TEST_F(CommandLineInterfaceTest, ReservedFieldNumbersFailAsExtension) {
+  CreateTempFile("foo.proto",
+                 R"(
+syntax = "proto2";
+message Foo {
+  extensions 4 to max;
+}
+extend Foo {
+  optional int32 i = 19123;
+}
+)");
+
+  Run("protocol_compiler --test_out=$tmpdir --proto_path=$tmpdir foo.proto");
+
+  ExpectErrorSubstring(
+      "foo.proto: Field numbers 19000 through 19999 are reserved for the "
+      "protocol buffer library implementation.");
+
+  CreateTempFile("foo.proto",
+                 R"(
+syntax = "proto2";
+message Foo {
+  extensions 4 to max;
+}
+message Bar {
+  extend Foo {
+    optional int32 i = 19123;
+  }
+}
+)");
+
+  Run("protocol_compiler --test_out=$tmpdir --proto_path=$tmpdir foo.proto");
+
+  ExpectErrorSubstring(
+      "foo.proto: Field numbers 19000 through 19999 are reserved for the "
+      "protocol buffer library implementation.");
+}
+
+
 TEST_F(CommandLineInterfaceTest, Proto3OptionalAllowWithFlag) {
   CreateTempFile("google/foo.proto",
                  "syntax = \"proto3\";\n"
@@ -2554,9 +2639,9 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
   }
 
   void RedirectStdinFromText(const std::string& input) {
-    std::string filename = TestTempDir() + "/test_stdin";
-    GOOGLE_CHECK_OK(File::SetContents(filename, input, true));
-    GOOGLE_CHECK(RedirectStdinFromFile(filename));
+    std::string filename = absl::StrCat(TestTempDir(), "/test_stdin");
+    ABSL_CHECK_OK(File::SetContents(filename, input, true));
+    ABSL_CHECK(RedirectStdinFromFile(filename));
   }
 
   bool RedirectStdinFromFile(const std::string& filename) {
@@ -2586,17 +2671,18 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
   bool Run(const std::string& command, bool specify_proto_files = true) {
     std::vector<std::string> args;
     args.push_back("protoc");
-    for (StringPiece split_piece :
-         Split(command, " ", true)) {
+    for (absl::string_view split_piece :
+         absl::StrSplit(command, " ", absl::SkipEmpty())) {
       args.push_back(std::string(split_piece));
     }
     if (specify_proto_files) {
       switch (GetParam()) {
         case PROTO_PATH:
-          args.push_back("--proto_path=" + TestUtil::TestSourceDir());
+          args.push_back(
+              absl::StrCat("--proto_path=", TestUtil::TestSourceDir()));
           break;
         case DESCRIPTOR_SET_IN:
-          args.push_back(StrCat("--descriptor_set_in=",
+          args.push_back(absl::StrCat("--descriptor_set_in=",
                                       unittest_proto_descriptor_set_filename_));
           break;
         default:
@@ -2624,7 +2710,8 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
 
   void ExpectStdoutMatchesBinaryFile(const std::string& filename) {
     std::string expected_output;
-    GOOGLE_CHECK_OK(File::GetContents(filename, &expected_output, true));
+    ABSL_CHECK_OK(
+        File::GetContents(filename, &expected_output, true));
 
     // Don't use EXPECT_EQ because we don't want to print raw binary data to
     // stdout on failure.
@@ -2633,7 +2720,8 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
 
   void ExpectStdoutMatchesTextFile(const std::string& filename) {
     std::string expected_output;
-    GOOGLE_CHECK_OK(File::GetContents(filename, &expected_output, true));
+    ABSL_CHECK_OK(
+        File::GetContents(filename, &expected_output, true));
 
     ExpectStdoutMatchesText(expected_output);
   }
@@ -2654,7 +2742,7 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
  private:
   void WriteUnittestProtoDescriptorSet() {
     unittest_proto_descriptor_set_filename_ =
-        TestTempDir() + "/unittest_proto_descriptor_set.bin";
+        absl::StrCat(TestTempDir(), "/unittest_proto_descriptor_set.bin");
     FileDescriptorSet file_descriptor_set;
     protobuf_unittest::TestAllTypes test_all_types;
     test_all_types.descriptor()->file()->CopyTo(file_descriptor_set.add_file());
@@ -2665,12 +2753,12 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
     protobuf_unittest_import::PublicImportMessage public_import_message;
     public_import_message.descriptor()->file()->CopyTo(
         file_descriptor_set.add_file());
-    GOOGLE_DCHECK(file_descriptor_set.IsInitialized());
+    ABSL_DCHECK(file_descriptor_set.IsInitialized());
 
     std::string binary_proto;
-    GOOGLE_CHECK(file_descriptor_set.SerializeToString(&binary_proto));
-    GOOGLE_CHECK_OK(File::SetContents(unittest_proto_descriptor_set_filename_,
-                               binary_proto, true));
+    ABSL_CHECK(file_descriptor_set.SerializeToString(&binary_proto));
+    ABSL_CHECK_OK(File::SetContents(unittest_proto_descriptor_set_filename_,
+                                    binary_proto, true));
   }
 
   int duped_stdin_;
@@ -2681,27 +2769,28 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
 
 TEST_P(EncodeDecodeTest, Encode) {
   RedirectStdinFromFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/"
+      "third_party/protobuf/"
       "testdata/text_format_unittest_data_oneof_implemented.txt"));
   std::string args;
   if (GetParam() != DESCRIPTOR_SET_IN) {
     args.append(
-        TestUtil::MaybeTranslatePath("net/proto2/internal/unittest.proto"));
+        TestUtil::MaybeTranslatePath("third_party/protobuf/unittest.proto"));
   }
-  EXPECT_TRUE(Run(args + " --encode=protobuf_unittest.TestAllTypes"));
+  EXPECT_TRUE(
+      Run(absl::StrCat(args, " --encode=protobuf_unittest.TestAllTypes")));
   ExpectStdoutMatchesBinaryFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/testdata/golden_message_oneof_implemented"));
+      "third_party/protobuf/testdata/golden_message_oneof_implemented"));
   ExpectStderrMatchesText("");
 }
 
 TEST_P(EncodeDecodeTest, Decode) {
   RedirectStdinFromFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/testdata/golden_message_oneof_implemented"));
+      "third_party/protobuf/testdata/golden_message_oneof_implemented"));
   EXPECT_TRUE(
-      Run(TestUtil::MaybeTranslatePath("net/proto2/internal/unittest.proto") +
+      Run(TestUtil::MaybeTranslatePath("third_party/protobuf/unittest.proto") +
           " --decode=protobuf_unittest.TestAllTypes"));
   ExpectStdoutMatchesTextFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/"
+      "third_party/protobuf/"
       "testdata/text_format_unittest_data_oneof_implemented.txt"));
   ExpectStderrMatchesText("");
 }
@@ -2709,7 +2798,7 @@ TEST_P(EncodeDecodeTest, Decode) {
 TEST_P(EncodeDecodeTest, Partial) {
   RedirectStdinFromText("");
   EXPECT_TRUE(
-      Run(TestUtil::MaybeTranslatePath("net/proto2/internal/unittest.proto") +
+      Run(TestUtil::MaybeTranslatePath("third_party/protobuf/unittest.proto") +
           " --encode=protobuf_unittest.TestRequired"));
   ExpectStdoutMatchesText("");
   ExpectStderrMatchesText(
@@ -2733,7 +2822,7 @@ TEST_P(EncodeDecodeTest, DecodeRaw) {
 
 TEST_P(EncodeDecodeTest, UnknownType) {
   EXPECT_FALSE(
-      Run(TestUtil::MaybeTranslatePath("net/proto2/internal/unittest.proto") +
+      Run(TestUtil::MaybeTranslatePath("third_party/protobuf/unittest.proto") +
           " --encode=NoSuchType"));
   ExpectStdoutMatchesText("");
   ExpectStderrMatchesText("Type not defined: NoSuchType\n");
@@ -2750,25 +2839,25 @@ TEST_P(EncodeDecodeTest, ProtoParseError) {
 
 TEST_P(EncodeDecodeTest, EncodeDeterministicOutput) {
   RedirectStdinFromFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/"
+      "third_party/protobuf/"
       "testdata/text_format_unittest_data_oneof_implemented.txt"));
   std::string args;
   if (GetParam() != DESCRIPTOR_SET_IN) {
     args.append(
-        TestUtil::MaybeTranslatePath("net/proto2/internal/unittest.proto"));
+        TestUtil::MaybeTranslatePath("third_party/protobuf/unittest.proto"));
   }
-  EXPECT_TRUE(Run(
-      args + " --encode=protobuf_unittest.TestAllTypes --deterministic_output"));
+  EXPECT_TRUE(Run(absl::StrCat(
+      args, " --encode=protobuf_unittest.TestAllTypes --deterministic_output")));
   ExpectStdoutMatchesBinaryFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/testdata/golden_message_oneof_implemented"));
+      "third_party/protobuf/testdata/golden_message_oneof_implemented"));
   ExpectStderrMatchesText("");
 }
 
 TEST_P(EncodeDecodeTest, DecodeDeterministicOutput) {
   RedirectStdinFromFile(TestUtil::GetTestDataPath(
-      "net/proto2/internal/testdata/golden_message_oneof_implemented"));
+      "third_party/protobuf/testdata/golden_message_oneof_implemented"));
   EXPECT_FALSE(
-      Run(TestUtil::MaybeTranslatePath("net/proto2/internal/unittest.proto") +
+      Run(TestUtil::MaybeTranslatePath("third_party/protobuf/unittest.proto") +
           " --decode=protobuf_unittest.TestAllTypes --deterministic_output"));
   ExpectStderrMatchesText(
       "Can only use --deterministic_output with --encode.\n");
@@ -2780,7 +2869,7 @@ INSTANTIATE_TEST_SUITE_P(FileDescriptorSetSource, EncodeDecodeTest,
 
 #endif  // !GOOGLE_PROTOBUF_HEAP_CHECK_DRACONIAN
 
-#include <google/protobuf/port_undef.inc>
+#include "google/protobuf/port_undef.inc"
 
 }  // namespace compiler
 }  // namespace protobuf

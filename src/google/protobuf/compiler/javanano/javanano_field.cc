@@ -32,6 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+#include <absl/log/absl_check.h>
+#include <absl/log/absl_log.h>
 #include <google/protobuf/compiler/javanano/javanano_field.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/compiler/javanano/javanano_primitive_field.h>
@@ -66,8 +68,8 @@ void FieldGenerator::GenerateMergingCodeFromPacked(io::Printer* printer) const {
   //     overridden.
   //   - This FieldGenerator doesn't support packing, and this method should
   //     never have been called.
-  GOOGLE_LOG(FATAL) << "GenerateParsingCodeFromPacked() "
-             << "called on field generator that does not support packing.";
+  ABSL_LOG(FATAL) << "GenerateParsingCodeFromPacked() "
+                  << "called on field generator that does not support packing.";
 }
 
 // =============================================
@@ -146,26 +148,24 @@ FieldGeneratorMap::~FieldGeneratorMap() {}
 
 const FieldGenerator& FieldGeneratorMap::get(
     const FieldDescriptor* field) const {
-  GOOGLE_CHECK_EQ(field->containing_type(), descriptor_);
+  ABSL_CHECK_EQ(field->containing_type(), descriptor_);
   return *field_generators_[field->index()];
 }
 
-void SetCommonOneofVariables(const FieldDescriptor* descriptor,
-                             std::map<std::string, std::string>* variables) {
+void SetCommonOneofVariables(const FieldDescriptor *descriptor,
+                             std::map<std::string, std::string> *variables) {
   (*variables)["oneof_name"] =
       UnderscoresToCamelCase(descriptor->containing_oneof());
   (*variables)["oneof_capitalized_name"] =
       UnderscoresToCapitalizedCamelCase(descriptor->containing_oneof());
   (*variables)["oneof_index"] =
-      SimpleItoa(descriptor->containing_oneof()->index());
-  (*variables)["set_oneof_case"] =
-      "this." + (*variables)["oneof_name"] +
-      "Case_ = " + SimpleItoa(descriptor->number());
+      absl::StrCat(descriptor->containing_oneof()->index());
+  (*variables)["set_oneof_case"] = absl::StrCat(
+      "this.", (*variables)["oneof_name"], "Case_ = ", descriptor->number());
   (*variables)["clear_oneof_case"] =
-      "this." + (*variables)["oneof_name"] + "Case_ = 0";
-  (*variables)["has_oneof_case"] =
-      "this." + (*variables)["oneof_name"] + "Case_ == " +
-      SimpleItoa(descriptor->number());
+      absl::StrCat("this.", (*variables)["oneof_name"], "Case_ = 0");
+  (*variables)["has_oneof_case"] = absl::StrCat(
+      "this.", (*variables)["oneof_name"], "Case_ == ", descriptor->number());
 }
 
 void GenerateOneofFieldEquals(const FieldDescriptor* descriptor,

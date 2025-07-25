@@ -32,6 +32,7 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+#include <absl/log/absl_check.h>
 #include <google/protobuf/compiler/javamicro/javamicro_field.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
 #include <google/protobuf/compiler/javamicro/javamicro_primitive_field.h>
@@ -88,7 +89,7 @@ FieldGeneratorMap::~FieldGeneratorMap() {}
 
 const FieldGenerator& FieldGeneratorMap::get(
     const FieldDescriptor* field) const {
-  GOOGLE_CHECK_EQ(field->containing_type(), descriptor_);
+  ABSL_CHECK_EQ(field->containing_type(), descriptor_);
   return *field_generators_[field->index()];
 }
 

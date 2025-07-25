@@ -39,6 +39,7 @@
 
 #include <string>
 #include <google/protobuf/compiler/code_generator.h>
+#include <google/protobuf/stubs/port.h>
 
 namespace google {
 namespace protobuf {
@@ -52,6 +53,8 @@ namespace javanano {
 class LIBPROTOC_EXPORT JavaNanoGenerator : public CodeGenerator {
  public:
   JavaNanoGenerator();
+  JavaNanoGenerator(const JavaNanoGenerator&) = delete;
+  JavaNanoGenerator& operator=(const JavaNanoGenerator&) = delete;
   ~JavaNanoGenerator();
 
   // implements CodeGenerator ----------------------------------------
@@ -59,9 +62,6 @@ class LIBPROTOC_EXPORT JavaNanoGenerator : public CodeGenerator {
                 const std::string& parameter,
                 GeneratorContext* output_directory,
                 std::string* error) const;
-
- private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(JavaNanoGenerator);
 };
 
 }  // namespace javanano

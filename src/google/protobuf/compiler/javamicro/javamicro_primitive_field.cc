@@ -35,12 +35,13 @@
 #include <map>
 #include <string>
 
+#include <absl/log/absl_log.h>
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javamicro/javamicro_primitive_field.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -68,7 +69,7 @@ const char* PrimitiveTypeName(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return NULL;
 }
 
@@ -88,7 +89,7 @@ bool IsReferenceType(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return false;
 }
 
@@ -117,7 +118,7 @@ const char* GetCapitalizedType(const FieldDescriptor* field) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return NULL;
 }
 
@@ -149,7 +150,7 @@ int FixedSize(FieldDescriptor::Type type) {
     // No default because we want the compiler to complain if any new
     // types are added.
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return -1;
 }
 
@@ -171,7 +172,7 @@ bool IsVariableLenType(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return false;
 }
 
@@ -187,13 +188,13 @@ void SetPrimitiveVariables(const FieldDescriptor* descriptor, const Params param
     UnderscoresToCamelCase(descriptor);
   (*variables)["capitalized_name"] =
     UnderscoresToCapitalizedCamelCase(descriptor);
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   (*variables)["type"] = PrimitiveTypeName(GetJavaType(descriptor));
   (*variables)["default"] = DefaultValue(params, descriptor);
   (*variables)["boxed_type"] = BoxedPrimitiveTypeName(GetJavaType(descriptor));
   (*variables)["capitalized_type"] = GetCapitalizedType(descriptor);
-  (*variables)["tag"] = SimpleItoa(WireFormat::MakeTag(descriptor));
-  (*variables)["tag_size"] = SimpleItoa(
+  (*variables)["tag"] = absl::StrCat(WireFormat::MakeTag(descriptor));
+  (*variables)["tag_size"] = absl::StrCat(
       WireFormat::TagSize(descriptor->number(), descriptor->type()));
   if (IsReferenceType(GetJavaType(descriptor))) {
     (*variables)["null_check"] =
@@ -205,7 +206,7 @@ void SetPrimitiveVariables(const FieldDescriptor* descriptor, const Params param
   }
   int fixed_size = FixedSize(descriptor->type());
   if (fixed_size != -1) {
-    (*variables)["fixed_size"] = SimpleItoa(fixed_size);
+    (*variables)["fixed_size"] = absl::StrCat(fixed_size);
   }
   (*variables)["message_name"] = descriptor->containing_type()->name();
 }
@@ -334,7 +335,7 @@ RepeatedPrimitiveFieldGenerator(const FieldDescriptor* descriptor, const Params&
   : FieldGenerator(params), descriptor_(descriptor) {
   SetPrimitiveVariables(descriptor, params, &variables_);
   if (descriptor_->options().packed()) {
-    GOOGLE_LOG(FATAL) << "MicroRuntime does not support packed";
+    ABSL_LOG(FATAL) << "MicroRuntime does not support packed";
   }
 }
 

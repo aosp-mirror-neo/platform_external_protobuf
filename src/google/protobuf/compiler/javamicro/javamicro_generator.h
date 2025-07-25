@@ -39,6 +39,7 @@
 
 #include <string>
 #include <google/protobuf/compiler/code_generator.h>
+#include <google/protobuf/stubs/port.h>
 
 namespace google {
 namespace protobuf {
@@ -52,6 +53,8 @@ namespace javamicro {
 class LIBPROTOC_EXPORT JavaMicroGenerator : public CodeGenerator {
  public:
   JavaMicroGenerator();
+  JavaMicroGenerator(const JavaMicroGenerator&) = delete;
+  JavaMicroGenerator& operator=(const JavaMicroGenerator&) = delete;
   ~JavaMicroGenerator();
 
   // implements CodeGenerator ----------------------------------------
@@ -59,9 +62,6 @@ class LIBPROTOC_EXPORT JavaMicroGenerator : public CodeGenerator {
                 const std::string& parameter,
                 OutputDirectory* output_directory,
                 std::string* error) const;
-
- private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(JavaMicroGenerator);
 };
 
 }  // namespace javamicro

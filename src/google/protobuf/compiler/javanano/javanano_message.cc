@@ -33,12 +33,13 @@
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
 #include <algorithm>
-#include <google/protobuf/stubs/hash.h>
+
+#include <absl/strings/ascii.h>
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javanano/javanano_message.h>
 #include <google/protobuf/compiler/javanano/javanano_enum.h>
 #include <google/protobuf/compiler/javanano/javanano_extension.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format.h>
@@ -110,7 +111,7 @@ void MessageGenerator::GenerateStaticVariableInitializers(
 void MessageGenerator::Generate(io::Printer* printer) {
   if (!params_.store_unknown_fields() &&
       (descriptor_->extension_count() != 0 || descriptor_->extension_range_count() != 0)) {
-    GOOGLE_LOG(FATAL) << "Extensions are only supported in NANO_RUNTIME if the "
+    ABSL_LOG(FATAL) << "Extensions are only supported in NANO_RUNTIME if the "
         "'store_unknown_fields' generator option is 'true'\n";
   }
 
@@ -189,12 +190,12 @@ void MessageGenerator::Generate(io::Printer* printer) {
     vars["oneof_name"] = UnderscoresToCamelCase(oneof_desc);
     vars["oneof_capitalized_name"] =
         UnderscoresToCapitalizedCamelCase(oneof_desc);
-    vars["oneof_index"] = SimpleItoa(oneof_desc->index());
+    vars["oneof_index"] = absl::StrCat(oneof_desc->index());
     // Oneof Constants
     for (int j = 0; j < oneof_desc->field_count(); j++) {
       const FieldDescriptor* field = oneof_desc->field(j);
-      vars["number"] = SimpleItoa(field->number());
-      vars["cap_field_name"] = ToUpper(field->name());
+      vars["number"] = absl::StrCat(field->number());
+      vars["cap_field_name"] = absl::AsciiStrToUpper(field->name());
       printer->Print(vars,
         "public static final int $cap_field_name$_FIELD_NUMBER = $number$;\n");
     }
@@ -446,7 +447,7 @@ void MessageGenerator::GenerateMergeFromMethods(io::Printer* printer) {
 
     printer->Print(
       "case $tag$: {\n",
-      "tag", SimpleItoa(tag));
+      "tag", absl::StrCat(tag));
     printer->Indent();
 
     field_generators_.get(field).GenerateMergingCode(printer);
@@ -463,7 +464,7 @@ void MessageGenerator::GenerateMergeFromMethods(io::Printer* printer) {
         WireFormatLite::WIRETYPE_LENGTH_DELIMITED);
       printer->Print(
         "case $tag$: {\n",
-        "tag", SimpleItoa(packed_tag));
+        "tag", absl::StrCat(packed_tag));
       printer->Indent();
 
       field_generators_.get(field).GenerateMergingCodeFromPacked(printer);

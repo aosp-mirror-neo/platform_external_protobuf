@@ -55,6 +55,8 @@ class FieldGenerator {
  public:
   //FieldGenerator() {}
   FieldGenerator(const Params& params) : params_(params) {}
+  FieldGenerator(const FieldGenerator&) = delete;
+  FieldGenerator& operator=(const FieldGenerator&) = delete;
   virtual ~FieldGenerator();
 
   virtual void GenerateMembers(io::Printer* printer) const = 0;
@@ -67,14 +69,14 @@ class FieldGenerator {
 
  protected:
   const Params& params_;
- private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldGenerator);
 };
 
 // Convenience class which constructs FieldGenerators for a Descriptor.
 class FieldGeneratorMap {
  public:
   explicit FieldGeneratorMap(const Descriptor* descriptor, const Params &params);
+  FieldGeneratorMap(const FieldGeneratorMap&) = delete;
+  FieldGeneratorMap& operator=(const FieldGeneratorMap&) = delete;
   ~FieldGeneratorMap();
 
   const FieldGenerator& get(const FieldDescriptor* field) const;
@@ -86,8 +88,6 @@ class FieldGeneratorMap {
   std::unique_ptr<std::unique_ptr<FieldGenerator>[]> extension_generators_;
 
   static FieldGenerator* MakeGenerator(const FieldDescriptor* field, const Params &params);
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldGeneratorMap);
 };
 
 }  // namespace javamicro

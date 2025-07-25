@@ -48,6 +48,8 @@ class PrimitiveFieldGenerator : public FieldGenerator {
  public:
   explicit PrimitiveFieldGenerator(
       const FieldDescriptor* descriptor, const Params& params);
+  PrimitiveFieldGenerator(const PrimitiveFieldGenerator&) = delete;
+  PrimitiveFieldGenerator& operator=(const PrimitiveFieldGenerator&) = delete;
   ~PrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -66,14 +68,14 @@ class PrimitiveFieldGenerator : public FieldGenerator {
 
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(PrimitiveFieldGenerator);
 };
 
 class AccessorPrimitiveFieldGenerator : public FieldGenerator {
  public:
   explicit AccessorPrimitiveFieldGenerator(const FieldDescriptor* descriptor,
       const Params &params, int has_bit_index);
+  AccessorPrimitiveFieldGenerator(const AccessorPrimitiveFieldGenerator&) = delete;
+  AccessorPrimitiveFieldGenerator& operator=(const AccessorPrimitiveFieldGenerator&) = delete;
   ~AccessorPrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -90,14 +92,14 @@ class AccessorPrimitiveFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(AccessorPrimitiveFieldGenerator);
 };
 
 class PrimitiveOneofFieldGenerator : public FieldGenerator {
  public:
   explicit PrimitiveOneofFieldGenerator(
       const FieldDescriptor* descriptor, const Params& params);
+  PrimitiveOneofFieldGenerator(const PrimitiveOneofFieldGenerator&) = delete;
+  PrimitiveOneofFieldGenerator& operator=(const PrimitiveOneofFieldGenerator&) = delete;
   ~PrimitiveOneofFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -112,14 +114,14 @@ class PrimitiveOneofFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(PrimitiveOneofFieldGenerator);
 };
 
 class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
  public:
   explicit RepeatedPrimitiveFieldGenerator(const FieldDescriptor* descriptor,
                                            const Params& params);
+  RepeatedPrimitiveFieldGenerator(const RepeatedPrimitiveFieldGenerator&) = delete;
+  RepeatedPrimitiveFieldGenerator& operator=(const RepeatedPrimitiveFieldGenerator&) = delete;
   ~RepeatedPrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -138,8 +140,6 @@ class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
 
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RepeatedPrimitiveFieldGenerator);
 };
 
 }  // namespace javanano
