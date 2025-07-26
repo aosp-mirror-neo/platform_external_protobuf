@@ -32,6 +32,8 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+#include <absl/strings/str_replace.h>
+#include <absl/strings/str_split.h>
 #include <google/protobuf/compiler/javanano/javanano_params.h>
 #include <google/protobuf/compiler/javanano/javanano_generator.h>
 #include <google/protobuf/compiler/javanano/javanano_file.h>
@@ -39,7 +41,6 @@
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -116,8 +117,7 @@ bool JavaNanoGenerator::Generate(const FileDescriptor* file,
     if (option_name == "output_list_file") {
       output_list_file = option_value;
     } else if (option_name == "java_package") {
-      std::vector<std::string> parts;
-      SplitStringUsing(option_value, "|", &parts);
+      std::vector<std::string> parts = absl::StrSplit(option_value, "|");
       if (parts.size() != 2) {
         *error = "Bad java_package, expecting filename|PackageName found '"
           + option_value + "'";
@@ -125,8 +125,7 @@ bool JavaNanoGenerator::Generate(const FileDescriptor* file,
       }
       params.set_java_package(parts[0], parts[1]);
     } else if (option_name == "java_outer_classname") {
-      std::vector<std::string> parts;
-      SplitStringUsing(option_value, "|", &parts);
+      std::vector<std::string> parts = absl::StrSplit(option_value, "|");
       if (parts.size() != 2) {
         *error = "Bad java_outer_classname, "
                  "expecting filename|ClassName found '"
@@ -188,7 +187,7 @@ bool JavaNanoGenerator::Generate(const FileDescriptor* file,
   }
 
   std::string package_dir =
-    StringReplace(file_generator.java_package(), ".", "/", true);
+      absl::StrReplaceAll(file_generator.java_package(), {{".", "/"}});
   if (!package_dir.empty()) package_dir += "/";
 
   std::vector<std::string> all_files;

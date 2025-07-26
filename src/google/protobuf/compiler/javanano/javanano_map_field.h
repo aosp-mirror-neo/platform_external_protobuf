@@ -45,6 +45,8 @@ class MapFieldGenerator : public FieldGenerator {
  public:
   explicit MapFieldGenerator(
       const FieldDescriptor* descriptor, const Params& params);
+  MapFieldGenerator(const MapFieldGenerator&) = delete;
+  MapFieldGenerator& operator=(const MapFieldGenerator&) = delete;
   ~MapFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
@@ -59,8 +61,6 @@ class MapFieldGenerator : public FieldGenerator {
  private:
   const FieldDescriptor* descriptor_;
   std::map<std::string, std::string> variables_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MapFieldGenerator);
 };
 
 }  // namespace javanano

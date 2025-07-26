@@ -28,12 +28,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <absl/log/absl_check.h>
+#include <absl/strings/ascii.h>
 #include <google/protobuf/compiler/javanano/javanano_map_field.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
 
 namespace google {
 namespace protobuf {
@@ -65,46 +66,46 @@ std::string TypeName(const Params& params, const FieldDescriptor* field,
     // are added..
   }
 
-  GOOGLE_LOG(FATAL) << "should not reach here.";
+  ABSL_LOG(FATAL) << "should not reach here.";
   return "";
 }
 
 const FieldDescriptor* KeyField(const FieldDescriptor* descriptor) {
-  GOOGLE_CHECK_EQ(FieldDescriptor::TYPE_MESSAGE, descriptor->type());
+  ABSL_CHECK_EQ(FieldDescriptor::TYPE_MESSAGE, descriptor->type());
   const Descriptor* message = descriptor->message_type();
-  GOOGLE_CHECK(message->options().map_entry());
+  ABSL_CHECK(message->options().map_entry());
   return message->FindFieldByName("key");
 }
 
 const FieldDescriptor* ValueField(const FieldDescriptor* descriptor) {
-  GOOGLE_CHECK_EQ(FieldDescriptor::TYPE_MESSAGE, descriptor->type());
+  ABSL_CHECK_EQ(FieldDescriptor::TYPE_MESSAGE, descriptor->type());
   const Descriptor* message = descriptor->message_type();
-  GOOGLE_CHECK(message->options().map_entry());
+  ABSL_CHECK(message->options().map_entry());
   return message->FindFieldByName("value");
 }
 
-void SetMapVariables(const Params& params,
-    const FieldDescriptor* descriptor, std::map<std::string, std::string>* variables) {
-  const FieldDescriptor* key = KeyField(descriptor);
-  const FieldDescriptor* value = ValueField(descriptor);
-  (*variables)["name"] =
-    RenameJavaKeywords(UnderscoresToCamelCase(descriptor));
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+void SetMapVariables(const Params &params, const FieldDescriptor *descriptor,
+                     std::map<std::string, std::string> *variables) {
+  const FieldDescriptor *key = KeyField(descriptor);
+  const FieldDescriptor *value = ValueField(descriptor);
+  (*variables)["name"] = RenameJavaKeywords(UnderscoresToCamelCase(descriptor));
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   (*variables)["key_type"] = TypeName(params, key, false);
-  (*variables)["boxed_key_type"] = TypeName(params,key, true);
-  (*variables)["key_desc_type"] =
-      "TYPE_" + ToUpper(FieldDescriptor::TypeName(key->type()));
-  (*variables)["key_tag"] = SimpleItoa(internal::WireFormat::MakeTag(key));
+  (*variables)["boxed_key_type"] = TypeName(params, key, true);
+  (*variables)["key_desc_type"] = absl::StrCat(
+      "TYPE_", absl::AsciiStrToUpper(FieldDescriptor::TypeName(key->type())));
+  (*variables)["key_tag"] = absl::StrCat(internal::WireFormat::MakeTag(key));
   (*variables)["value_type"] = TypeName(params, value, false);
   (*variables)["boxed_value_type"] = TypeName(params, value, true);
-  (*variables)["value_desc_type"] =
-      "TYPE_" + ToUpper(FieldDescriptor::TypeName(value->type()));
-  (*variables)["value_tag"] = SimpleItoa(internal::WireFormat::MakeTag(value));
+  (*variables)["value_desc_type"] = absl::StrCat(
+      "TYPE_", absl::AsciiStrToUpper(FieldDescriptor::TypeName(value->type())));
+  (*variables)["value_tag"] =
+      absl::StrCat(internal::WireFormat::MakeTag(value));
   (*variables)["type_parameters"] =
       (*variables)["boxed_key_type"] + ", " + (*variables)["boxed_value_type"];
   (*variables)["value_default"] =
       value->type() == FieldDescriptor::TYPE_MESSAGE
-          ? "new " + (*variables)["value_type"] + "()"
+          ? absl::StrCat("new ", (*variables)["value_type"], "()")
           : "null";
 }
 }  // namespace

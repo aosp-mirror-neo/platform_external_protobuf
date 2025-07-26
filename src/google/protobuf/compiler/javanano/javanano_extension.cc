@@ -30,10 +30,11 @@
 
 // Author: bduff@google.com (Brian Duff)
 
+#include <absl/log/absl_log.h>
+#include <absl/strings/str_cat.h>
 #include <google/protobuf/compiler/javanano/javanano_extension.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/io/printer.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/wire_format.h>
 
 namespace google {
@@ -71,7 +72,7 @@ const char* GetTypeConstantName(const FieldDescriptor::Type type) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return NULL;
 }
 
@@ -85,7 +86,7 @@ void SetVariables(const FieldDescriptor* descriptor, const Params params,
   (*variables)["repeated"] = repeated ? "Repeated" : "";
   (*variables)["type"] = GetTypeConstantName(descriptor->type());
   JavaType java_type = GetJavaType(descriptor->type());
-  std::string tag = SimpleItoa(WireFormat::MakeTag(descriptor));
+  std::string tag = absl::StrCat(WireFormat::MakeTag(descriptor));
   if (java_type == JAVATYPE_MESSAGE) {
     (*variables)["ext_type"] = "MessageTyped";
     std::string message_type = ClassName(params, descriptor->message_type());
@@ -108,13 +109,13 @@ void SetVariables(const FieldDescriptor* descriptor, const Params params,
         (*variables)["tag_params"] = tag + ", " + tag + ", 0";
       } else if (descriptor->options().packed()) {
         // Packable and packed: tag == packedTag
-        std::string non_packed_tag = SimpleItoa(WireFormatLite::MakeTag(
+        std::string non_packed_tag = absl::StrCat(WireFormatLite::MakeTag(
             descriptor->number(),
             WireFormat::WireTypeForFieldType(descriptor->type())));
         (*variables)["tag_params"] = tag + ", " + non_packed_tag + ", " + tag;
       } else {
         // Packable and not packed: tag == nonPackedTag
-        std::string packed_tag = SimpleItoa(WireFormatLite::MakeTag(
+        std::string packed_tag = absl::StrCat(WireFormatLite::MakeTag(
             descriptor->number(), WireFormatLite::WIRETYPE_LENGTH_DELIMITED));
         (*variables)["tag_params"] = tag + ", " + tag + ", " + packed_tag;
       }

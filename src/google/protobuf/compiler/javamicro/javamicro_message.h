@@ -54,6 +54,8 @@ namespace javamicro {
 class MessageGenerator {
  public:
   explicit MessageGenerator(const Descriptor* descriptor, const Params& params);
+  MessageGenerator(const MessageGenerator&) = delete;
+  MessageGenerator& operator=(const MessageGenerator&) = delete;
   ~MessageGenerator();
 
   // All static variables have to be declared at the top-level of the file
@@ -81,8 +83,6 @@ class MessageGenerator {
   const Params& params_;
   const Descriptor* descriptor_;
   FieldGeneratorMap field_generators_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageGenerator);
 };
 
 }  // namespace javamicro

@@ -33,16 +33,15 @@
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
 #include <map>
-#include <math.h>
 #include <string>
 
+#include <absl/log/absl_log.h>
+#include <absl/strings/substitute.h>
 #include <google/protobuf/compiler/javanano/javanano_primitive_field.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/compiler/javanano/javanano_helpers.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/substitute.h>
 
 namespace google {
 namespace protobuf {
@@ -70,7 +69,7 @@ bool IsReferenceType(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return false;
 }
 
@@ -90,7 +89,7 @@ bool IsArrayType(JavaType type) {
     // JavaTypes are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return false;
 }
 
@@ -119,7 +118,7 @@ const char* GetCapitalizedType(const FieldDescriptor* field) {
     // types are added.
   }
 
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return NULL;
 }
 
@@ -151,7 +150,7 @@ int FixedSize(FieldDescriptor::Type type) {
     // No default because we want the compiler to complain if any new
     // types are added.
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
+  ABSL_LOG(FATAL) << "Can't get here.";
   return -1;
 }
 
@@ -171,7 +170,7 @@ void SetPrimitiveVariables(const FieldDescriptor* descriptor, const Params param
     RenameJavaKeywords(UnderscoresToCamelCase(descriptor));
   (*variables)["capitalized_name"] =
     RenameJavaKeywords(UnderscoresToCapitalizedCamelCase(descriptor));
-  (*variables)["number"] = SimpleItoa(descriptor->number());
+  (*variables)["number"] = absl::StrCat(descriptor->number());
   if (params.use_reference_types_for_primitives()
       && !descriptor->is_repeated()) {
     (*variables)["type"] = BoxedPrimitiveTypeName(GetJavaType(descriptor));
@@ -189,25 +188,25 @@ void SetPrimitiveVariables(const FieldDescriptor* descriptor, const Params param
     if (descriptor->type() == FieldDescriptor::TYPE_BYTES) {
       (*variables)["default"] = DefaultValue(params, descriptor);
       (*variables)["default_constant"] = FieldDefaultConstantName(descriptor);
-      (*variables)["default_constant_value"] = strings::Substitute(
+      (*variables)["default_constant_value"] = absl::Substitute(
           "com.google.protobuf.nano.InternalNano.bytesDefaultValue(\"$0\")",
-          CEscape(descriptor->default_value_string()));
+          absl::CEscape(descriptor->default_value_string()));
       (*variables)["default_copy_if_needed"] =
-          (*variables)["default"] + ".clone()";
+          absl::StrCat((*variables)["default"], ".clone()");
     } else if (AllAscii(descriptor->default_value_string())) {
       // All chars are ASCII.  In this case directly referencing a
       // CEscape()'d string literal works fine.
-      (*variables)["default"] =
-          "\"" + CEscape(descriptor->default_value_string()) + "\"";
+      (*variables)["default"] = absl::StrCat(
+          "\"", absl::CEscape(descriptor->default_value_string()), "\"");
       (*variables)["default_copy_if_needed"] = (*variables)["default"];
     } else {
       // Strings where some chars are non-ASCII. We need to save the
       // default value.
       (*variables)["default"] = DefaultValue(params, descriptor);
       (*variables)["default_constant"] = FieldDefaultConstantName(descriptor);
-      (*variables)["default_constant_value"] = strings::Substitute(
+      (*variables)["default_constant_value"] = absl::Substitute(
           "com.google.protobuf.nano.InternalNano.stringDefaultValue(\"$0\")",
-          CEscape(descriptor->default_value_string()));
+          absl::CEscape(descriptor->default_value_string()));
       (*variables)["default_copy_if_needed"] = (*variables)["default"];
     }
   } else {
@@ -217,15 +216,15 @@ void SetPrimitiveVariables(const FieldDescriptor* descriptor, const Params param
   }
   (*variables)["boxed_type"] = BoxedPrimitiveTypeName(GetJavaType(descriptor));
   (*variables)["capitalized_type"] = GetCapitalizedType(descriptor);
-  (*variables)["tag"] = SimpleItoa(WireFormat::MakeTag(descriptor));
-  (*variables)["tag_size"] = SimpleItoa(
+  (*variables)["tag"] = absl::StrCat(WireFormat::MakeTag(descriptor));
+  (*variables)["tag_size"] = absl::StrCat(
       WireFormat::TagSize(descriptor->number(), descriptor->type()));
-  (*variables)["non_packed_tag"] = SimpleItoa(
+  (*variables)["non_packed_tag"] = absl::StrCat(
       internal::WireFormatLite::MakeTag(descriptor->number(),
           internal::WireFormat::WireTypeForFieldType(descriptor->type())));
   int fixed_size = FixedSize(descriptor->type());
   if (fixed_size != -1) {
-    (*variables)["fixed_size"] = SimpleItoa(fixed_size);
+    (*variables)["fixed_size"] = absl::StrCat(fixed_size);
   }
   (*variables)["message_name"] = descriptor->containing_type()->name();
   (*variables)["empty_array_name"] = EmptyArrayName(params, descriptor);
@@ -494,7 +493,7 @@ GenerateHashCodeCode(io::Printer* printer) const {
           "result = 31 * result + (this.$name$ ? 1231 : 1237);\n");
         break;
       default:
-        GOOGLE_LOG(ERROR) << "unknown java type for primitive field";
+        ABSL_LOG(ERROR) << "unknown java type for primitive field";
         break;
     }
   }
@@ -641,7 +640,7 @@ GenerateEqualsCode(io::Printer* printer) const {
         "}\n");
       break;
     default:
-      GOOGLE_LOG(ERROR) << "unknown java type for primitive field";
+      ABSL_LOG(ERROR) << "unknown java type for primitive field";
       break;
   }
 }
@@ -686,7 +685,7 @@ GenerateHashCodeCode(io::Printer* printer) const {
         "result = 31 * result + java.util.Arrays.hashCode($name$_);\n");
       break;
     default:
-      GOOGLE_LOG(ERROR) << "unknown java type for primitive field";
+      ABSL_LOG(ERROR) << "unknown java type for primitive field";
       break;
   }
 }
