@@ -57,6 +57,11 @@ cc_defaults {
                 "-ldbghelp",
             ],
         },
+        darwin: {
+            host_ldlibs: [
+                "-framework CoreFoundation",
+            ],
+        },
     },
 }
 
