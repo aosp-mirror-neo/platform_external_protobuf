@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2023 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 //
 // This file defines the internal StringBlock class
 
@@ -62,11 +39,21 @@ class alignas(std::string) StringBlock {
   StringBlock(const StringBlock&) = delete;
   StringBlock& operator=(const StringBlock&) = delete;
 
+  // Returns the size of the next string block based on the size information
+  // stored in `block`. `block` may be null in which case the size of the
+  // initial string block is returned.
+  static size_t NextSize(StringBlock* block);
+
   // Allocates a new StringBlock pointing to `next`, which can be null.
   // The size of the returned block depends on the allocated size of `next`.
   static StringBlock* New(StringBlock* next);
 
-  // Deletes `block`. `block` must not be null.
+  // Allocates a new string block `in place`. `n` must be the value returned
+  // from a previous call to `StringBlock::NextSize(next)`
+  static StringBlock* Emplace(void* p, size_t n, StringBlock* next);
+
+  // Deletes `block` if `block` is heap allocated. `block` must not be null.
+  // Returns the allocated size of `block`, or 0 if the block was emplaced.
   static size_t Delete(StringBlock* block);
 
   StringBlock* next() const;
@@ -86,6 +73,9 @@ class alignas(std::string) StringBlock {
   // Returns the total allocation size of this instance.
   size_t allocated_size() const { return allocated_size_; }
 
+  // Returns true if this block is heap allocated, false if emplaced.
+  bool heap_allocated() const { return heap_allocated_; }
+
   // Returns the effective size available for allocation string instances.
   // This value is guaranteed to be a multiple of sizeof(std::string), and
   // guaranteed to never be zero.
@@ -97,20 +87,44 @@ class alignas(std::string) StringBlock {
 
   ~StringBlock() = default;
 
-  explicit StringBlock(StringBlock* next, uint32_t size,
+  explicit StringBlock(StringBlock* next, bool heap_allocated, uint32_t size,
                        uint32_t next_size) noexcept
-      : next_(next), allocated_size_(size), next_size_(next_size) {}
+      : next_(next),
+        heap_allocated_(heap_allocated),
+        allocated_size_(size),
+        next_size_(next_size) {}
 
   static constexpr uint32_t min_size() { return size_t{256}; }
   static constexpr uint32_t max_size() { return size_t{8192}; }
+
+  // Returns `size` rounded down such that we can fit a perfect number
+  // of std::string instances inside a StringBlock of that size.
+  static constexpr uint32_t RoundedSize(uint32_t size);
 
   // Returns the size of the next block.
   size_t next_size() const { return next_size_; }
 
   StringBlock* const next_;
-  const uint32_t allocated_size_;
+  const bool heap_allocated_ : 1;
+  const uint32_t allocated_size_ : 31;
   const uint32_t next_size_;
 };
+
+constexpr uint32_t StringBlock::RoundedSize(uint32_t size) {
+  return size - (size - sizeof(StringBlock)) % sizeof(std::string);
+}
+
+inline size_t StringBlock::NextSize(StringBlock* block) {
+  return block ? block->next_size() : min_size();
+}
+
+inline StringBlock* StringBlock::Emplace(void* p, size_t n, StringBlock* next) {
+  const auto count = static_cast<uint32_t>(n);
+  ABSL_DCHECK_EQ(count, NextSize(next));
+  uint32_t doubled = count * 2;
+  uint32_t next_size = next ? std::min(doubled, max_size()) : min_size();
+  return new (p) StringBlock(next, false, RoundedSize(count), next_size);
+}
 
 inline StringBlock* StringBlock::New(StringBlock* next) {
   // Compute required size, rounding down to a multiple of sizeof(std:string)
@@ -122,13 +136,14 @@ inline StringBlock* StringBlock::New(StringBlock* next) {
     size = next->next_size_;
     next_size = std::min(size * 2, max_size());
   }
-  size -= (size - sizeof(StringBlock)) % sizeof(std::string);
+  size = RoundedSize(size);
   void* p = ::operator new(size);
-  return new (p) StringBlock(next, size, next_size);
+  return new (p) StringBlock(next, true, size, next_size);
 }
 
 inline size_t StringBlock::Delete(StringBlock* block) {
   ABSL_DCHECK(block != nullptr);
+  if (!block->heap_allocated_) return size_t{0};
   size_t size = block->allocated_size();
   internal::SizedDelete(block, size);
   return size;
