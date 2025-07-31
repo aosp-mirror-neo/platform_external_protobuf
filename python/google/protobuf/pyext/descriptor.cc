@@ -1,38 +1,16 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: petar@google.com (Petar Petrov)
 
 #include "google/protobuf/pyext/descriptor.h"
 
 #include "absl/log/absl_check.h"
+#include "google/protobuf/descriptor_legacy.h"
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -122,10 +100,12 @@ PyObject* PyString_FromCppString(const std::string& str) {
 //
 // From user code, descriptors still look immutable.
 //
-// TODO(amauryfa): Change the proto2 compiler to remove the assignments, and
+// TODO: Change the proto2 compiler to remove the assignments, and
 // remove this hack.
 bool _CalledFromGeneratedFile(int stacklevel) {
-#ifndef PYPY_VERSION
+#ifdef PYPY_VERSION
+  return true;
+#else
   // This check is not critical and is somewhat difficult to implement correctly
   // in PyPy.
   PyFrameObject* frame = PyEval_GetFrame();
@@ -181,7 +161,6 @@ bool _CalledFromGeneratedFile(int stacklevel) {
     // Not at global module scope
     goto exit;
   }
-#endif
   result = true;
 exit:
   Py_XDECREF(frame_globals);
@@ -189,6 +168,7 @@ exit:
   Py_XDECREF(frame_code);
   Py_XDECREF(frame);
   return result;
+#endif
 }
 
 // If the calling code is not a _pb2.py file, raise AttributeError.
@@ -618,8 +598,8 @@ static PyObject* GetExtensionRanges(PyBaseDescriptor *self, void *closure) {
 
   for (int i = 0; i < descriptor->extension_range_count(); i++) {
     const Descriptor::ExtensionRange* range = descriptor->extension_range(i);
-    PyObject* start = PyLong_FromLong(range->start);
-    PyObject* end = PyLong_FromLong(range->end);
+    PyObject* start = PyLong_FromLong(range->start_number());
+    PyObject* end = PyLong_FromLong(range->end_number());
     PyList_SetItem(range_list, i, PyTuple_Pack(2, start, end));
   }
 
@@ -692,8 +672,14 @@ static PyObject* EnumValueName(PyBaseDescriptor *self, PyObject *args) {
 }
 
 static PyObject* GetSyntax(PyBaseDescriptor *self, void *closure) {
-  return PyUnicode_InternFromString(
-      FileDescriptor::SyntaxName(_GetDescriptor(self)->file()->syntax()));
+  PyErr_WarnEx(nullptr,
+               "descriptor.syntax is deprecated. It will be removed soon. "
+               "Most usages are checking field descriptors. Consider to use "
+               "has_presence, is_packed on field descriptors.",
+               1);
+  std::string syntax(FileDescriptorLegacy::SyntaxName(
+      FileDescriptorLegacy(_GetDescriptor(self)->file()).syntax()));
+  return PyUnicode_InternFromString(syntax.c_str());
 }
 
 static PyGetSetDef Getters[] = {
@@ -1512,8 +1498,14 @@ static int SetSerializedOptions(PyFileDescriptor *self, PyObject *value,
 }
 
 static PyObject* GetSyntax(PyFileDescriptor *self, void *closure) {
-  return PyUnicode_InternFromString(
-      FileDescriptor::SyntaxName(_GetDescriptor(self)->syntax()));
+  PyErr_WarnEx(nullptr,
+               "descriptor.syntax is deprecated. It will be removed soon. "
+               "Most usages are checking field descriptors. Consider to use "
+               "has_presence, is_packed on field descriptors.",
+               1);
+  std::string syntax(FileDescriptorLegacy::SyntaxName(
+      FileDescriptorLegacy(_GetDescriptor(self)).syntax()));
+  return PyUnicode_InternFromString(syntax.c_str());
 }
 
 static PyObject* CopyToProto(PyFileDescriptor *self, PyObject *target) {
@@ -1621,7 +1613,7 @@ PyObject* PyFileDescriptor_FromDescriptorWithSerializedPb(
     Py_XINCREF(serialized_pb);
     cfile_descriptor->serialized_pb = serialized_pb;
   }
-  // TODO(amauryfa): In the case of a cached object, check that serialized_pb
+  // TODO: In the case of a cached object, check that serialized_pb
   // is the same as before.
 
   return py_descriptor;
