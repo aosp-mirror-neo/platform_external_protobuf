@@ -12,46 +12,47 @@ permissions:
   contents: read  #  to fetch code (actions/checkout)
 
 jobs:
-  build-php:
-    name: Build
+  package:
+    name: Package
     runs-on: ubuntu-latest
-    container: ${{ matrix.php-image }}
-    strategy:
-      matrix:
-        php-image:
-          - php:7.4-cli
-          - php:8.1-cli
-    # TODO(b/266868629) Dockerize these instead of installing all the
-    # dependencies on each run.
     steps:
-      - name: Install python3
-        run: |
-          apt-get update -q
-          apt-get install -qy python3
-      - name: Install bazel
-        run: |
-          apt-get install -qy wget
-          mkdir $HOME/bin
-          wget -O $HOME/bin/bazel https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-linux-x86_64
-          chmod a+x $HOME/bin/bazel
-      - name: Install git
-        run: |
-          apt-get install -qy --no-install-recommends git
       - name: Checkout
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        uses: protocolbuffers/protobuf-ci/checkout@v2
         with:
           ref: ${{ inputs.safe-checkout }}
-          submodules: recursive
-      - name: Create package
-        run: |
-          cd $GITHUB_WORKSPACE
-          rm -rf bazel-bin/php/protobuf-*.tgz
-          $HOME/bin/bazel build php:release
-      - name: Compile extension
-        run: |
-          cd /tmp
-          MAKE="make -j$(nproc)" pecl install $GITHUB_WORKSPACE/bazel-bin/php/protobuf-*.tgz
-      - name: Enable extension
-        run: docker-php-ext-enable protobuf
-      - name: Inspect extension
-        run: php --ri protobuf
+
+      - name: Package extension
+        uses: protocolbuffers/protobuf-ci/bazel@v2
+        with:
+          credentials: ${{ secrets.GAR_SERVICE_ACCOUNT }}
+          bazel-cache: php_ext/${{ matrix.version }}
+          bash: >
+            ./regenerate_stale_files.sh $BAZEL_FLAGS;
+            bazel build //php:release $BAZEL_FLAGS;
+            cp bazel-bin/php/protobuf-*.tgz .
+
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: protobuf-php-release
+          path: protobuf-*.tgz
+
+  build:
+    needs: [package]
+    strategy:
+      fail-fast: false   # Don't cancel all jobs if one fails.
+      matrix:
+        version: ["8.0", "8.1", "8.2"]
+    name: Build ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 #4.1.8
+        with:
+          name: protobuf-php-release
+
+      - name: Run tests
+        uses: protocolbuffers/protobuf-ci/docker@v2
+        with:
+          image: us-docker.pkg.dev/protobuf-build/containers/test/linux/php-extension:${{ matrix.version }}-a48f26c08d9a803dd0177dda63563f6ea6f7b2d4
+          credentials: ${{ secrets.GAR_SERVICE_ACCOUNT }}
+          skip-staleness-check: true
+          command: protobuf-*.tgz

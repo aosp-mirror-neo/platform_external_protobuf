@@ -142,7 +142,7 @@ cc_library(
         "@com_google_absl//absl/log:absl_log",
     ] + select({
         "//build_defs:config_msvc": [],
-        "//conditions:default": ["@zlib//:zlib"],
+        "//conditions:default": ["@zlib"],
     }),
 )
 
@@ -152,7 +152,10 @@ cc_library(
     hdrs = ["io_win32.h"],
     copts = COPTS,
     include_prefix = "google/protobuf/io",
-    visibility = ["//pkg:__pkg__"],
+    visibility = [
+        "//pkg:__pkg__",
+        "//src/google/protobuf/compiler:__pkg__",
+    ],
     deps = [
         "//src/google/protobuf:arena",
         "//src/google/protobuf/stubs:lite",
@@ -169,13 +172,12 @@ cc_test(
         "zero_copy_stream_unittest.cc",
     ],
     copts = COPTS,
-    data = [
-        "//src/google/protobuf:testdata",
-    ],
     deps = [
         ":gzip_stream",
         ":io",
         "//:protobuf",
+        "//src/google/protobuf",
+        "//src/google/protobuf:test_util",
         "//src/google/protobuf:test_util2",
         "//src/google/protobuf/testing",
         "@com_google_absl//absl/container:flat_hash_map",
