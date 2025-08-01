@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.google.protobuf;
 
@@ -23,12 +46,9 @@ import java.io.IOException;
  */
 @CheckReturnValue
 final class ArrayDecoders {
-  static final int DEFAULT_RECURSION_LIMIT = 100;
 
-  @SuppressWarnings("NonFinalStaticField")
-  private static volatile int recursionLimit = DEFAULT_RECURSION_LIMIT;
-
-  private ArrayDecoders() {}
+  private ArrayDecoders() {
+  }
 
   /**
    * A helper used to return multiple values in a Java function. Java doesn't natively support
@@ -41,7 +61,6 @@ final class ArrayDecoders {
     public long long1;
     public Object object1;
     public final ExtensionRegistryLite extensionRegistry;
-    public int recursionDepth;
 
     Registers() {
       this.extensionRegistry = ExtensionRegistryLite.getEmptyRegistry();
@@ -249,10 +268,7 @@ final class ArrayDecoders {
     if (length < 0 || length > limit - position) {
       throw InvalidProtocolBufferException.truncatedMessage();
     }
-    registers.recursionDepth++;
-    checkRecursionLimit(registers.recursionDepth);
     schema.mergeFrom(msg, data, position, position + length, registers);
-    registers.recursionDepth--;
     registers.object1 = msg;
     return position + length;
   }
@@ -270,11 +286,9 @@ final class ArrayDecoders {
     // A group field must has a MessageSchema (the only other subclass of Schema is MessageSetSchema
     // and it can't be used in group fields).
     final MessageSchema messageSchema = (MessageSchema) schema;
-    registers.recursionDepth++;
-    checkRecursionLimit(registers.recursionDepth);
+    // It's OK to directly use parseProto2Message since proto3 doesn't have group.
     final int endPosition =
-        messageSchema.parseMessage(msg, data, position, limit, endGroup, registers);
-    registers.recursionDepth--;
+        messageSchema.parseProto2Message(msg, data, position, limit, endGroup, registers);
     registers.object1 = msg;
     return endPosition;
   }
@@ -770,7 +784,7 @@ final class ArrayDecoders {
       return decodeUnknownField(
           tag, data, position, limit, getMutableUnknownFields(message), registers);
     } else  {
-      // TODO: remove the unused variable
+      // TODO(b/230609037): remove the unused variable
       FieldSet<ExtensionDescriptor> unused =
           ((GeneratedMessageLite.ExtendableMessage<?, ?>) message).ensureExtensionsAreMutable();
       return decodeExtension(
@@ -1035,8 +1049,6 @@ final class ArrayDecoders {
         final UnknownFieldSetLite child = UnknownFieldSetLite.newInstance();
         final int endGroup = (tag & ~0x7) | WireFormat.WIRETYPE_END_GROUP;
         int lastTag = 0;
-        registers.recursionDepth++;
-        checkRecursionLimit(registers.recursionDepth);
         while (position < limit) {
           position = decodeVarint32(data, position, registers);
           lastTag = registers.int1;
@@ -1045,7 +1057,6 @@ final class ArrayDecoders {
           }
           position = decodeUnknownField(lastTag, data, position, limit, child, registers);
         }
-        registers.recursionDepth--;
         if (position > limit || lastTag != endGroup) {
           throw InvalidProtocolBufferException.parseFailure();
         }
@@ -1090,20 +1101,6 @@ final class ArrayDecoders {
         return position;
       default:
         throw InvalidProtocolBufferException.invalidTag();
-    }
-  }
-
-  /**
-   * Set the maximum recursion limit that ArrayDecoders will allow. An exception will be thrown if
-   * the depth of the message exceeds this limit.
-   */
-  public static void setRecursionLimit(int limit) {
-    recursionLimit = limit;
-  }
-
-  private static void checkRecursionLimit(int depth) throws InvalidProtocolBufferException {
-    if (depth >= recursionLimit) {
-      throw InvalidProtocolBufferException.recursionLimitExceeded();
     }
   }
 }
