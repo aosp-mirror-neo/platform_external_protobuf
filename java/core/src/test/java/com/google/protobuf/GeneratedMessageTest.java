@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.google.protobuf;
 
@@ -50,9 +73,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -604,7 +624,7 @@ public class GeneratedMessageTest {
             // Create expected version passing foreign message instance explicitly.
             .setOptionalForeignMessage(ForeignMessage.newBuilder().setC(123).build())
             .build();
-    // TODO: Upgrade to using real #equals method once implemented
+    // TODO(ngd): Upgrade to using real #equals method once implemented
     assertThat(message.toString()).isEqualTo(expectedMessage.toString());
   }
 
@@ -2001,91 +2021,5 @@ public class GeneratedMessageTest {
 
     assertThat(builder.getRepeatedField(REPEATED_NESTED_MESSAGE_EXTENSION, 0))
         .isEqualTo(NestedMessage.newBuilder().setBb(100).build());
-  }
-
-  private TestUtil.TestLogHandler setupLogger() {
-    TestUtil.TestLogHandler logHandler = new TestUtil.TestLogHandler();
-    Logger logger = Logger.getLogger(GeneratedMessage.class.getName());
-    logger.addHandler(logHandler);
-    logHandler.setLevel(Level.ALL);
-    return logHandler;
-  }
-
-  
-  @Test
-  public void generatedMessage_makeExtensionsImmutableShouldLog() {
-    TestUtil.TestLogHandler logHandler = setupLogger();
-    class TestMessage1 extends GeneratedMessageV3 {
-        @Override
-        protected FieldAccessorTable internalGetFieldAccessorTable() {
-          return null;
-        }
-
-        @Override
-        protected Message.Builder newBuilderForType(BuilderParent parent) {
-          return null;
-        }
-
-        @Override
-        public Message.Builder newBuilderForType() {
-          return null;
-        }
-
-        @Override
-        public Message.Builder toBuilder() {
-          return null;
-        }
-
-        @Override
-        public Message getDefaultInstanceForType() {
-          return null;
-        }
-    }
-
-    class TestMessage2 extends TestMessage1 {}
-
-    TestMessage1 msg = new TestMessage1();
-    msg.makeExtensionsImmutable();
-    List<LogRecord> logs = logHandler.getStoredLogRecords();
-    assertThat(logs).hasSize(1);
-    String message = logs.get(0).getMessage();
-    // The generated type
-    assertThat(message).contains(
-        "Vulnerable protobuf generated type in use: " +
-        "com.google.protobuf.GeneratedMessageTest$1TestMessage1");
-    assertThat(message).contains(GeneratedMessage.PRE22_GENCODE_VULNERABILITY_MESSAGE);
-    assertThat(message).contains(GeneratedMessage.PRE22_GENCODE_SILENCE_PROPERTY);
-
-    // Subsequent calls for the same type do not log again.
-    msg.makeExtensionsImmutable();
-    assertThat(logHandler.getStoredLogRecords()).hasSize(1);
-
-    // A call on a second type does log for that type.
-    TestMessage2 msg2 = new TestMessage2();
-    msg2.makeExtensionsImmutable();
-    assertThat(logHandler.getStoredLogRecords()).hasSize(2);
-    // And not again (only once per type).
-    msg2.makeExtensionsImmutable();
-    assertThat(logHandler.getStoredLogRecords()).hasSize(2);
-  }
-
-  @Test
-  public void extendableMessage_makeExtensionsImmutableShouldThrow() {
-    TestUtil.TestLogHandler logHandler = setupLogger();
-    GeneratedMessageV3.ExtendableMessage<TestAllExtensions> msg =
-        TestAllExtensions.getDefaultInstance();
-    msg.makeExtensionsImmutable();
-    List<LogRecord> logs = logHandler.getStoredLogRecords();
-    assertThat(logs).hasSize(1);
-    String message = logs.get(0).getMessage();
-    assertThat(message).contains(
-      "Vulnerable protobuf generated type in use: " +
-      "protobuf_unittest.UnittestProto$TestAllExtensions");
-    assertThat(message).contains(GeneratedMessage.PRE22_GENCODE_VULNERABILITY_MESSAGE);
-    assertThat(message).contains(GeneratedMessage.PRE22_GENCODE_SILENCE_PROPERTY);
-
-    // Subsequent calls for the same type do not log again.
-    msg.makeExtensionsImmutable();
-    assertThat(logHandler.getStoredLogRecords()).hasSize(1);
   }
 }
