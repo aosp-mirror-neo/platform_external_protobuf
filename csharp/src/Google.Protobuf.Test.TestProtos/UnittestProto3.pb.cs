@@ -255,7 +255,6 @@ namespace Google.Protobuf.TestProtos {
   /// This proto includes every type of field in both singular and repeated
   /// forms.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestAllTypes : pb::IMessage<TestAllTypes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -881,24 +880,10 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public uint OneofUint32 {
-      get { return HasOneofUint32 ? (uint) oneofField_ : 0; }
+      get { return oneofFieldCase_ == OneofFieldOneofCase.OneofUint32 ? (uint) oneofField_ : 0; }
       set {
         oneofField_ = value;
         oneofFieldCase_ = OneofFieldOneofCase.OneofUint32;
-      }
-    }
-    /// <summary>Gets whether the "oneof_uint32" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasOneofUint32 {
-      get { return oneofFieldCase_ == OneofFieldOneofCase.OneofUint32; }
-    }
-    /// <summary> Clears the value of the oneof if it's currently set to "oneof_uint32" </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearOneofUint32() {
-      if (HasOneofUint32) {
-        ClearOneofField();
       }
     }
 
@@ -919,24 +904,10 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string OneofString {
-      get { return HasOneofString ? (string) oneofField_ : ""; }
+      get { return oneofFieldCase_ == OneofFieldOneofCase.OneofString ? (string) oneofField_ : ""; }
       set {
         oneofField_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
         oneofFieldCase_ = OneofFieldOneofCase.OneofString;
-      }
-    }
-    /// <summary>Gets whether the "oneof_string" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasOneofString {
-      get { return oneofFieldCase_ == OneofFieldOneofCase.OneofString; }
-    }
-    /// <summary> Clears the value of the oneof if it's currently set to "oneof_string" </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearOneofString() {
-      if (HasOneofString) {
-        ClearOneofField();
       }
     }
 
@@ -945,24 +916,10 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pb::ByteString OneofBytes {
-      get { return HasOneofBytes ? (pb::ByteString) oneofField_ : pb::ByteString.Empty; }
+      get { return oneofFieldCase_ == OneofFieldOneofCase.OneofBytes ? (pb::ByteString) oneofField_ : pb::ByteString.Empty; }
       set {
         oneofField_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
         oneofFieldCase_ = OneofFieldOneofCase.OneofBytes;
-      }
-    }
-    /// <summary>Gets whether the "oneof_bytes" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasOneofBytes {
-      get { return oneofFieldCase_ == OneofFieldOneofCase.OneofBytes; }
-    }
-    /// <summary> Clears the value of the oneof if it's currently set to "oneof_bytes" </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearOneofBytes() {
-      if (HasOneofBytes) {
-        ClearOneofField();
       }
     }
 
@@ -1104,10 +1061,10 @@ namespace Google.Protobuf.TestProtos {
       hash ^= repeatedForeignEnum_.GetHashCode();
       hash ^= repeatedImportEnum_.GetHashCode();
       hash ^= repeatedPublicImportMessage_.GetHashCode();
-      if (HasOneofUint32) hash ^= OneofUint32.GetHashCode();
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofUint32) hash ^= OneofUint32.GetHashCode();
       if (oneofFieldCase_ == OneofFieldOneofCase.OneofNestedMessage) hash ^= OneofNestedMessage.GetHashCode();
-      if (HasOneofString) hash ^= OneofString.GetHashCode();
-      if (HasOneofBytes) hash ^= OneofBytes.GetHashCode();
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofString) hash ^= OneofString.GetHashCode();
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofBytes) hash ^= OneofBytes.GetHashCode();
       hash ^= (int) oneofFieldCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1237,7 +1194,7 @@ namespace Google.Protobuf.TestProtos {
       repeatedForeignEnum_.WriteTo(output, _repeated_repeatedForeignEnum_codec);
       repeatedImportEnum_.WriteTo(output, _repeated_repeatedImportEnum_codec);
       repeatedPublicImportMessage_.WriteTo(output, _repeated_repeatedPublicImportMessage_codec);
-      if (HasOneofUint32) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofUint32) {
         output.WriteRawTag(248, 6);
         output.WriteUInt32(OneofUint32);
       }
@@ -1245,11 +1202,11 @@ namespace Google.Protobuf.TestProtos {
         output.WriteRawTag(130, 7);
         output.WriteMessage(OneofNestedMessage);
       }
-      if (HasOneofString) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofString) {
         output.WriteRawTag(138, 7);
         output.WriteString(OneofString);
       }
-      if (HasOneofBytes) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofBytes) {
         output.WriteRawTag(146, 7);
         output.WriteBytes(OneofBytes);
       }
@@ -1373,7 +1330,7 @@ namespace Google.Protobuf.TestProtos {
       repeatedForeignEnum_.WriteTo(ref output, _repeated_repeatedForeignEnum_codec);
       repeatedImportEnum_.WriteTo(ref output, _repeated_repeatedImportEnum_codec);
       repeatedPublicImportMessage_.WriteTo(ref output, _repeated_repeatedPublicImportMessage_codec);
-      if (HasOneofUint32) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofUint32) {
         output.WriteRawTag(248, 6);
         output.WriteUInt32(OneofUint32);
       }
@@ -1381,11 +1338,11 @@ namespace Google.Protobuf.TestProtos {
         output.WriteRawTag(130, 7);
         output.WriteMessage(OneofNestedMessage);
       }
-      if (HasOneofString) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofString) {
         output.WriteRawTag(138, 7);
         output.WriteString(OneofString);
       }
-      if (HasOneofBytes) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofBytes) {
         output.WriteRawTag(146, 7);
         output.WriteBytes(OneofBytes);
       }
@@ -1487,16 +1444,16 @@ namespace Google.Protobuf.TestProtos {
       size += repeatedForeignEnum_.CalculateSize(_repeated_repeatedForeignEnum_codec);
       size += repeatedImportEnum_.CalculateSize(_repeated_repeatedImportEnum_codec);
       size += repeatedPublicImportMessage_.CalculateSize(_repeated_repeatedPublicImportMessage_codec);
-      if (HasOneofUint32) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofUint32) {
         size += 2 + pb::CodedOutputStream.ComputeUInt32Size(OneofUint32);
       }
       if (oneofFieldCase_ == OneofFieldOneofCase.OneofNestedMessage) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(OneofNestedMessage);
       }
-      if (HasOneofString) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofString) {
         size += 2 + pb::CodedOutputStream.ComputeStringSize(OneofString);
       }
-      if (HasOneofBytes) {
+      if (oneofFieldCase_ == OneofFieldOneofCase.OneofBytes) {
         size += 2 + pb::CodedOutputStream.ComputeBytesSize(OneofBytes);
       }
       if (_unknownFields != null) {
@@ -2130,7 +2087,6 @@ namespace Google.Protobuf.TestProtos {
         [pbr::OriginalName("NEG")] Neg = -1,
       }
 
-      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class NestedMessage : pb::IMessage<NestedMessage>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage
@@ -2333,7 +2289,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// This proto includes a recursively nested message.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class NestedTestAllTypes : pb::IMessage<NestedTestAllTypes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2604,7 +2559,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestDeprecatedFields : pb::IMessage<TestDeprecatedFields>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2799,7 +2753,6 @@ namespace Google.Protobuf.TestProtos {
   /// Define these after TestAllTypes to make sure the compiler can handle
   /// that.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class ForeignMessage : pb::IMessage<ForeignMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2989,7 +2942,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestReservedFields : pb::IMessage<TestReservedFields>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3145,7 +3097,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test that we can use NestedMessage from outside TestAllTypes.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestForeignNested : pb::IMessage<TestForeignNested>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3347,7 +3298,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test that really large tag numbers don't break anything.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestReallyLargeTagNumber : pb::IMessage<TestReallyLargeTagNumber>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3578,7 +3528,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestRecursiveMessage : pb::IMessage<TestRecursiveMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3817,7 +3766,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test that mutual recursion works.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestMutualRecursionA : pb::IMessage<TestMutualRecursionA>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4016,7 +3964,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestMutualRecursionB : pb::IMessage<TestMutualRecursionB>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4252,7 +4199,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestEnumAllowAlias : pb::IMessage<TestEnumAllowAlias>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4446,7 +4392,6 @@ namespace Google.Protobuf.TestProtos {
   /// Test message with CamelCase field names.  This violates Protocol Buffer
   /// standard style.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestCamelCaseFieldNames : pb::IMessage<TestCamelCaseFieldNames>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4868,7 +4813,6 @@ namespace Google.Protobuf.TestProtos {
   /// We list fields out of order, to ensure that we're using field number and not
   /// field index to determine serialization order.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestFieldOrderings : pb::IMessage<TestFieldOrderings>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5181,7 +5125,6 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static partial class Types {
-      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class NestedMessage : pb::IMessage<NestedMessage>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage
@@ -5418,7 +5361,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class SparseEnumMessage : pb::IMessage<SparseEnumMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5611,7 +5553,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test String and Bytes: string is for valid UTF-8 strings
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class OneString : pb::IMessage<OneString>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5801,7 +5742,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MoreString : pb::IMessage<MoreString>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5980,7 +5920,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class OneBytes : pb::IMessage<OneBytes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -6170,7 +6109,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MoreBytes : pb::IMessage<MoreBytes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -6363,7 +6301,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test int32, uint32, int64, uint64, and bool are all compatible
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Int32Message : pb::IMessage<Int32Message>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -6553,7 +6490,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Uint32Message : pb::IMessage<Uint32Message>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -6743,7 +6679,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Int64Message : pb::IMessage<Int64Message>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -6933,7 +6868,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Uint64Message : pb::IMessage<Uint64Message>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -7123,7 +7057,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class BoolMessage : pb::IMessage<BoolMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -7316,7 +7249,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test oneofs.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestOneof : pb::IMessage<TestOneof>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -7377,24 +7309,10 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int FooInt {
-      get { return HasFooInt ? (int) foo_ : 0; }
+      get { return fooCase_ == FooOneofCase.FooInt ? (int) foo_ : 0; }
       set {
         foo_ = value;
         fooCase_ = FooOneofCase.FooInt;
-      }
-    }
-    /// <summary>Gets whether the "foo_int" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasFooInt {
-      get { return fooCase_ == FooOneofCase.FooInt; }
-    }
-    /// <summary> Clears the value of the oneof if it's currently set to "foo_int" </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearFooInt() {
-      if (HasFooInt) {
-        ClearFoo();
       }
     }
 
@@ -7403,24 +7321,10 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string FooString {
-      get { return HasFooString ? (string) foo_ : ""; }
+      get { return fooCase_ == FooOneofCase.FooString ? (string) foo_ : ""; }
       set {
         foo_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
         fooCase_ = FooOneofCase.FooString;
-      }
-    }
-    /// <summary>Gets whether the "foo_string" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasFooString {
-      get { return fooCase_ == FooOneofCase.FooString; }
-    }
-    /// <summary> Clears the value of the oneof if it's currently set to "foo_string" </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearFooString() {
-      if (HasFooString) {
-        ClearFoo();
       }
     }
 
@@ -7484,8 +7388,8 @@ namespace Google.Protobuf.TestProtos {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (HasFooInt) hash ^= FooInt.GetHashCode();
-      if (HasFooString) hash ^= FooString.GetHashCode();
+      if (fooCase_ == FooOneofCase.FooInt) hash ^= FooInt.GetHashCode();
+      if (fooCase_ == FooOneofCase.FooString) hash ^= FooString.GetHashCode();
       if (fooCase_ == FooOneofCase.FooMessage) hash ^= FooMessage.GetHashCode();
       hash ^= (int) fooCase_;
       if (_unknownFields != null) {
@@ -7506,11 +7410,11 @@ namespace Google.Protobuf.TestProtos {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (HasFooInt) {
+      if (fooCase_ == FooOneofCase.FooInt) {
         output.WriteRawTag(8);
         output.WriteInt32(FooInt);
       }
-      if (HasFooString) {
+      if (fooCase_ == FooOneofCase.FooString) {
         output.WriteRawTag(18);
         output.WriteString(FooString);
       }
@@ -7528,11 +7432,11 @@ namespace Google.Protobuf.TestProtos {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (HasFooInt) {
+      if (fooCase_ == FooOneofCase.FooInt) {
         output.WriteRawTag(8);
         output.WriteInt32(FooInt);
       }
-      if (HasFooString) {
+      if (fooCase_ == FooOneofCase.FooString) {
         output.WriteRawTag(18);
         output.WriteString(FooString);
       }
@@ -7550,10 +7454,10 @@ namespace Google.Protobuf.TestProtos {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (HasFooInt) {
+      if (fooCase_ == FooOneofCase.FooInt) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(FooInt);
       }
-      if (HasFooString) {
+      if (fooCase_ == FooOneofCase.FooString) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(FooString);
       }
       if (fooCase_ == FooOneofCase.FooMessage) {
@@ -7657,7 +7561,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestPackedTypes : pb::IMessage<TestPackedTypes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -8206,7 +8109,6 @@ namespace Google.Protobuf.TestProtos {
   /// A message with the same fields as TestPackedTypes, but without packing. Used
   /// to test packed &lt;-> unpacked wire compatibility.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestUnpackedTypes : pb::IMessage<TestUnpackedTypes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -8751,7 +8653,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestRepeatedScalarDifferentTagSizes : pb::IMessage<TestRepeatedScalarDifferentTagSizes>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -9086,7 +8987,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestCommentInjectionMessage : pb::IMessage<TestCommentInjectionMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -9282,7 +9182,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// Test that RPC services work.
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class FooRequest : pb::IMessage<FooRequest>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -9435,7 +9334,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class FooResponse : pb::IMessage<FooResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -9588,7 +9486,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class FooClientMessage : pb::IMessage<FooClientMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -9741,7 +9638,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class FooServerMessage : pb::IMessage<FooServerMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -9894,7 +9790,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class BarRequest : pb::IMessage<BarRequest>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -10047,7 +9942,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class BarResponse : pb::IMessage<BarResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -10200,7 +10094,6 @@ namespace Google.Protobuf.TestProtos {
 
   }
 
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TestEmptyMessage : pb::IMessage<TestEmptyMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -10356,7 +10249,6 @@ namespace Google.Protobuf.TestProtos {
   /// <summary>
   /// This is a leading comment
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class CommentMessage : pb::IMessage<CommentMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -10565,7 +10457,6 @@ namespace Google.Protobuf.TestProtos {
       /// <summary>
       /// Leading nested message comment
       /// </summary>
-      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class NestedCommentMessage : pb::IMessage<NestedCommentMessage>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage
