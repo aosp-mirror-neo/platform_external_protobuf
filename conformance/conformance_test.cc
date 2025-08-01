@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "conformance_test.h"
 
@@ -12,6 +35,8 @@
 #include <fstream>
 #include <string>
 
+#include "google/protobuf/message.h"
+#include "google/protobuf/text_format.h"
 #include "google/protobuf/util/field_comparator.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
@@ -21,9 +46,6 @@
 #include "absl/strings/string_view.h"
 #include "conformance/conformance.pb.h"
 #include "conformance/conformance.pb.h"
-#include "google/protobuf/descriptor_legacy.h"
-#include "google/protobuf/message.h"
-#include "google/protobuf/text_format.h"
 
 using conformance::ConformanceRequest;
 using conformance::ConformanceResponse;
@@ -140,20 +162,12 @@ ConformanceTestSuite::ConformanceRequestSetting::NewTestMessage() const {
 }
 
 string ConformanceTestSuite::ConformanceRequestSetting::GetTestName() const {
-  string rname;
-  switch (FileDescriptorLegacy(prototype_message_.GetDescriptor()->file())
-              .syntax()) {
-    case FileDescriptorLegacy::Syntax::SYNTAX_PROTO3:
-      rname = ".Proto3.";
-      break;
-    case FileDescriptorLegacy::Syntax::SYNTAX_PROTO2:
-      rname = ".Proto2.";
-      break;
-    default:
-      break;
-  }
+  string rname = prototype_message_.GetDescriptor()->file()->syntax() ==
+                         FileDescriptor::SYNTAX_PROTO3
+                     ? "Proto3"
+                     : "Proto2";
 
-  return absl::StrCat(ConformanceLevelToString(level_), rname,
+  return absl::StrCat(ConformanceLevelToString(level_), ".", rname, ".",
                       InputFormatString(input_format_), ".", test_name_, ".",
                       OutputFormatString(output_format_));
 }
