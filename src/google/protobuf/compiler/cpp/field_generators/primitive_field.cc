@@ -1,28 +1,49 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
-#include <cstddef>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
-#include "absl/log/absl_check.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "google/protobuf/compiler/cpp/field.h"
 #include "google/protobuf/compiler/cpp/field_generators/generators.h"
 #include "google/protobuf/compiler/cpp/helpers.h"
 #include "google/protobuf/compiler/cpp/options.h"
-#include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/io/printer.h"
 #include "google/protobuf/wire_format.h"
@@ -35,7 +56,7 @@ namespace {
 using ::google::protobuf::internal::WireFormat;
 using ::google::protobuf::internal::WireFormatLite;
 using Sub = ::google::protobuf::io::Printer::Sub;
-using Semantic = ::google::protobuf::io::AnnotationCollector::Semantic;
+using Annotation = ::google::protobuf::GeneratedCodeInfo::Annotation;
 
 // For encodings with fixed sizes, returns that size in bytes.
 absl::optional<size_t> FixedSize(FieldDescriptor::Type type) {
@@ -87,9 +108,11 @@ std::vector<Sub> Vars(const FieldDescriptor* field, const Options& options) {
 
 class SingularPrimitive final : public FieldGeneratorBase {
  public:
-  SingularPrimitive(const FieldDescriptor* field, const Options& opts,
-                    MessageSCCAnalyzer* scc)
-      : FieldGeneratorBase(field, opts, scc), field_(field), opts_(&opts) {}
+  SingularPrimitive(const FieldDescriptor* field, const Options& opts)
+      : FieldGeneratorBase(field, opts),
+        field_(field),
+        opts_(&opts),
+        is_oneof_(field_->real_containing_oneof() != nullptr) {}
   ~SingularPrimitive() override = default;
 
   std::vector<Sub> MakeVars() const override { return Vars(field_, *opts_); }
@@ -113,7 +136,7 @@ class SingularPrimitive final : public FieldGeneratorBase {
   }
 
   void GenerateSwappingCode(io::Printer* p) const override {
-    if (is_oneof()) {
+    if (is_oneof_) {
       // Don't print any swapping code. Swapping the union will swap this field.
       return;
     }
@@ -125,7 +148,7 @@ class SingularPrimitive final : public FieldGeneratorBase {
   }
 
   void GenerateConstructorCode(io::Printer* p) const override {
-    if (!is_oneof()) {
+    if (!is_oneof_) {
       return;
     }
 
@@ -142,19 +165,19 @@ class SingularPrimitive final : public FieldGeneratorBase {
 
   void GenerateConstexprAggregateInitializer(io::Printer* p) const override {
     p->Emit(R"cc(
-      /*decltype($field_$)*/ $kDefault$,
+      /*decltype($field_$)*/ $kDefault$
     )cc");
   }
 
   void GenerateAggregateInitializer(io::Printer* p) const override {
     p->Emit(R"cc(
-      decltype($field_$){$kDefault$},
+      decltype($field_$) { $kDefault$ }
     )cc");
   }
 
   void GenerateCopyAggregateInitializer(io::Printer* p) const override {
     p->Emit(R"cc(
-      decltype($field_$){},
+      decltype($field_$) {}
     )cc");
   }
 
@@ -166,22 +189,32 @@ class SingularPrimitive final : public FieldGeneratorBase {
  private:
   const FieldDescriptor* field_;
   const Options* opts_;
+  bool is_oneof_;
 };
 
 void SingularPrimitive::GenerateAccessorDeclarations(io::Printer* p) const {
-  auto v = p->WithVars(
-      AnnotatedAccessors(field_, {"", "_internal_", "_internal_set_"}));
-  auto vs = p->WithVars(AnnotatedAccessors(field_, {"set_"}, Semantic::kSet));
-  p->Emit(R"cc(
-    $DEPRECATED$ $Type$ $name$() const;
-    $DEPRECATED$ void $set_name$($Type$ value);
+  p->Emit(
+      {
+          Sub("name", p->LookupVar("name")).AnnotatedAs(field_),
+          Sub("set_name", absl::StrCat("set_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+          Sub("_internal_name",
+              absl::StrCat("_internal_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+          Sub("_internal_set_name",
+              absl::StrCat("_internal_set_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+      },
+      R"cc(
+        $DEPRECATED$ $Type$ $name$() const;
+        $DEPRECATED$ void $set_name$($Type$ value);
 
-    private:
-    $Type$ $_internal_name$() const;
-    void $_internal_set_name$($Type$ value);
+        private:
+        $Type$ $_internal_name$() const;
+        void $_internal_set_name$($Type$ value);
 
-    public:
-  )cc");
+        public:
+      )cc");
 }
 
 void SingularPrimitive::GenerateInlineAccessorDefinitions(
@@ -200,7 +233,7 @@ void SingularPrimitive::GenerateInlineAccessorDefinitions(
     }
   )cc");
 
-  if (is_oneof()) {
+  if (is_oneof_) {
     p->Emit(R"cc(
       inline $Type$ $Msg$::_internal_$name$() const {
         if ($has_field$) {
@@ -219,11 +252,9 @@ void SingularPrimitive::GenerateInlineAccessorDefinitions(
   } else {
     p->Emit(R"cc(
       inline $Type$ $Msg$::_internal_$name$() const {
-        $TsanDetectConcurrentRead$;
         return $field_$;
       }
       inline void $Msg$::_internal_set_$name$($Type$ value) {
-        $TsanDetectConcurrentMutation$;
         $set_hasbit$;
         $field_$ = value;
       }
@@ -233,25 +264,11 @@ void SingularPrimitive::GenerateInlineAccessorDefinitions(
 
 void SingularPrimitive::GenerateSerializeWithCachedSizesToArray(
     io::Printer* p) const {
-  if ((descriptor_->number() < 16) &&
-      (descriptor_->type() == FieldDescriptor::TYPE_INT32 ||
-       descriptor_->type() == FieldDescriptor::TYPE_INT64 ||
-       descriptor_->type() == FieldDescriptor::TYPE_ENUM)) {
-    // Call special non-inlined routine with tag number hardcoded as a
-    // template parameter that handles the EnsureSpace and the writing
-    // of the tag+value to the array
-    p->Emit(R"cc(
-      target = ::$proto_ns$::internal::WireFormatLite::
-          Write$declared_type$ToArrayWithField<$number$>(
-              stream, this->_internal_$name$(), target);
-    )cc");
-  } else {
-    p->Emit(R"cc(
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::Write$DeclaredType$ToArray(
-          $number$, this->_internal_$name$(), target);
-    )cc");
-  }
+  p->Emit(R"cc(
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::Write$DeclaredType$ToArray(
+        $number$, this->_internal_$name$(), target);
+  )cc");
 }
 
 void SingularPrimitive::GenerateByteSize(io::Printer* p) const {
@@ -283,119 +300,61 @@ void SingularPrimitive::GenerateByteSize(io::Printer* p) const {
 
 class RepeatedPrimitive final : public FieldGeneratorBase {
  public:
-  RepeatedPrimitive(const FieldDescriptor* field, const Options& opts,
-                    MessageSCCAnalyzer* scc)
-      : FieldGeneratorBase(field, opts, scc), field_(field), opts_(&opts) {}
+  RepeatedPrimitive(const FieldDescriptor* field, const Options& opts)
+      : FieldGeneratorBase(field, opts), field_(field), opts_(&opts) {}
   ~RepeatedPrimitive() override = default;
 
   std::vector<Sub> MakeVars() const override { return Vars(field_, *opts_); }
 
   void GenerateClearingCode(io::Printer* p) const override {
-    if (should_split()) {
-      p->Emit("$field_$.ClearIfNotDefault();\n");
-    } else {
-      p->Emit("$field_$.Clear();\n");
-    }
+    p->Emit(R"cc(
+      $field_$.Clear();
+    )cc");
   }
 
   void GenerateMergingCode(io::Printer* p) const override {
-    // TODO: experiment with simplifying this to be
-    // `if (!from.empty()) { body(); }` for both split and non-split cases.
-    auto body = [&] {
-      p->Emit(R"cc(
-        _this->_internal_mutable_$name$()->MergeFrom(from._internal_$name$());
-      )cc");
-    };
-    if (!should_split()) {
-      body();
-    } else {
-      p->Emit({{"body", body}}, R"cc(
-        if (!from.$field_$.IsDefault()) {
-          $body$;
-        }
-      )cc");
-    }
+    p->Emit(R"cc(
+      _this->$field_$.MergeFrom(from.$field_$);
+    )cc");
   }
 
   void GenerateSwappingCode(io::Printer* p) const override {
-    ABSL_CHECK(!should_split());
     p->Emit(R"cc(
       $field_$.InternalSwap(&other->$field_$);
     )cc");
   }
 
   void GenerateDestructorCode(io::Printer* p) const override {
-    if (should_split()) {
-      p->Emit(R"cc(
-        $field_$.DeleteIfNotDefault();
-      )cc");
-    } else {
-#ifndef PROTOBUF_EXPLICIT_CONSTRUCTORS
-      p->Emit(R"cc(
-        $field_$.~RepeatedField();
-      )cc");
-#endif  // !PROTOBUF_EXPLICIT_CONSTRUCTORS
-    }
+    p->Emit(R"cc(
+      $field_$.~RepeatedField();
+    )cc");
   }
 
   void GenerateConstructorCode(io::Printer* p) const override {}
 
   void GenerateCopyConstructorCode(io::Printer* p) const override {
-    if (should_split()) {
-      p->Emit(R"cc(
-        if (!from._internal_$name$().empty()) {
-          _internal_mutable_$name$()->MergeFrom(from._internal_$name$());
-        }
-      )cc");
-    }
+    ABSL_CHECK(!ShouldSplit(field_, *opts_));
   }
 
   void GenerateConstexprAggregateInitializer(io::Printer* p) const override {
     p->Emit(R"cc(
-      /*decltype($field_$)*/ {},
+      /*decltype($field_$)*/ {}
     )cc");
-    GenerateCacheSizeInitializer(p);
+    InitCachedSize(p);
   }
 
   void GenerateAggregateInitializer(io::Printer* p) const override {
-    ABSL_CHECK(!should_split());
     p->Emit(R"cc(
-      decltype($field_$){arena},
+      decltype($field_$) { arena }
     )cc");
-    GenerateCacheSizeInitializer(p);
+    InitCachedSize(p);
   }
 
   void GenerateCopyAggregateInitializer(io::Printer* p) const override {
-    ABSL_CHECK(!should_split());
     p->Emit(R"cc(
-      decltype($field_$){from.$field_$},
+      decltype($field_$) { from.$field_$ }
     )cc");
-    GenerateCacheSizeInitializer(p);
-  }
-
-  void GenerateMemberConstexprConstructor(io::Printer* p) const override {
-    p->Emit("$name$_{}");
-    if (HasCachedSize()) {
-      p->Emit(",\n_$name$_cached_byte_size_{0}");
-    }
-  }
-
-  void GenerateMemberConstructor(io::Printer* p) const override {
-    p->Emit("$name$_{visibility, arena}");
-    if (HasCachedSize()) {
-      p->Emit(",\n_$name$_cached_byte_size_{0}");
-    }
-  }
-
-  void GenerateMemberCopyConstructor(io::Printer* p) const override {
-    p->Emit("$name$_{visibility, arena, from.$name$_}");
-    if (HasCachedSize()) {
-      p->Emit(",\n_$name$_cached_byte_size_{0}");
-    }
-  }
-
-  void GenerateOneofCopyConstruct(io::Printer* p) const override {
-    ABSL_LOG(FATAL) << "Not supported";
+    InitCachedSize(p);
   }
 
   void GeneratePrivateMembers(io::Printer* p) const override;
@@ -408,17 +367,16 @@ class RepeatedPrimitive final : public FieldGeneratorBase {
   bool HasCachedSize() const {
     bool is_packed_varint =
         field_->is_packed() && !FixedSize(field_->type()).has_value();
-    return is_packed_varint && HasGeneratedMethods(field_->file(), *opts_) &&
-           !should_split();
+    return is_packed_varint && HasGeneratedMethods(field_->file(), *opts_);
   }
 
-  void GenerateCacheSizeInitializer(io::Printer* p) const {
+  void InitCachedSize(io::Printer* p) const {
     if (!HasCachedSize()) return;
     // std::atomic has no move constructor, which prevents explicit aggregate
     // initialization pre-C++17.
-    p->Emit(R"cc(
-      /* $_field_cached_byte_size_$ = */ {0},
-    )cc");
+    p->Emit(R"(
+      ,/* $_field_cached_byte_size_$ = */ { 0 }
+    )");
   }
 
   const FieldDescriptor* field_;
@@ -426,15 +384,9 @@ class RepeatedPrimitive final : public FieldGeneratorBase {
 };
 
 void RepeatedPrimitive::GeneratePrivateMembers(io::Printer* p) const {
-  if (should_split()) {
-    p->Emit(R"cc(
-      $pbi$::RawPtr<$pb$::RepeatedField<$Type$>> $name$_;
-    )cc");
-  } else {
-    p->Emit(R"cc(
-      $pb$::RepeatedField<$Type$> $name$_;
-    )cc");
-  }
+  p->Emit(R"cc(
+    $pb$::RepeatedField<$Type$> $name$_;
+  )cc");
 
   if (HasCachedSize()) {
     p->Emit({{"_cached_size_", MakeVarintCachedSizeName(field_)}},
@@ -445,25 +397,41 @@ void RepeatedPrimitive::GeneratePrivateMembers(io::Printer* p) const {
 }
 
 void RepeatedPrimitive::GenerateAccessorDeclarations(io::Printer* p) const {
-  auto v = p->WithVars(
-      AnnotatedAccessors(field_, {"", "_internal_", "_internal_mutable_"}));
-  auto vs =
-      p->WithVars(AnnotatedAccessors(field_, {"set_", "add_"}, Semantic::kSet));
-  auto va =
-      p->WithVars(AnnotatedAccessors(field_, {"mutable_"}, Semantic::kAlias));
-  p->Emit(R"cc(
-    $DEPRECATED$ $Type$ $name$(int index) const;
-    $DEPRECATED$ void $set_name$(int index, $Type$ value);
-    $DEPRECATED$ void $add_name$($Type$ value);
-    $DEPRECATED$ const $pb$::RepeatedField<$Type$>& $name$() const;
-    $DEPRECATED$ $pb$::RepeatedField<$Type$>* $mutable_name$();
+  p->Emit(
+      {
+          Sub("name", p->LookupVar("name")).AnnotatedAs(field_),
+          Sub("set_name", absl::StrCat("set_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+          Sub("add_name", absl::StrCat("add_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+          Sub("mutable_name", absl::StrCat("mutable_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
 
-    private:
-    const $pb$::RepeatedField<$Type$>& $_internal_name$() const;
-    $pb$::RepeatedField<$Type$>* $_internal_mutable_name$();
+          Sub("_internal_name",
+              absl::StrCat("_internal_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+          Sub("_internal_add_name",
+              absl::StrCat("_internal_add_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+          Sub("_internal_mutable_name",
+              absl::StrCat("_internal_mutable_", p->LookupVar("name")))
+              .AnnotatedAs(field_),
+      },
+      R"cc(
+        $DEPRECATED$ $Type$ $name$(int index) const;
+        $DEPRECATED$ void $set_name$(int index, $Type$ value);
+        $DEPRECATED$ void $add_name$($Type$ value);
+        $DEPRECATED$ const $pb$::RepeatedField<$Type$>& $name$() const;
+        $DEPRECATED$ $pb$::RepeatedField<$Type$>* $mutable_name$();
 
-    public:
-  )cc");
+        private:
+        $Type$ $_internal_name$(int index) const;
+        void $_internal_add_name$($Type$ value);
+        const $pb$::RepeatedField<$Type$>& $_internal_name$() const;
+        $pb$::RepeatedField<$Type$>* $_internal_mutable_name$();
+
+        public:
+      )cc");
 }
 
 void RepeatedPrimitive::GenerateInlineAccessorDefinitions(
@@ -472,72 +440,40 @@ void RepeatedPrimitive::GenerateInlineAccessorDefinitions(
     inline $Type$ $Msg$::$name$(int index) const {
       $annotate_get$;
       // @@protoc_insertion_point(field_get:$pkg.Msg.field$)
-      return _internal_$name$().Get(index);
+      return _internal_$name$(index);
     }
-  )cc");
-  p->Emit(R"cc(
     inline void $Msg$::set_$name$(int index, $Type$ value) {
       $annotate_set$;
-      _internal_mutable_$name$()->Set(index, value);
+      $field_$.Set(index, value);
       // @@protoc_insertion_point(field_set:$pkg.Msg.field$)
     }
-  )cc");
-  p->Emit(R"cc(
     inline void $Msg$::add_$name$($Type$ value) {
-      $TsanDetectConcurrentMutation$;
-      _internal_mutable_$name$()->Add(value);
+      _internal_add_$name$(value);
       $annotate_add$;
       // @@protoc_insertion_point(field_add:$pkg.Msg.field$)
     }
-  )cc");
-  p->Emit(R"cc(
-    inline const $pb$::RepeatedField<$Type$>& $Msg$::$name$() const
-        ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    inline const $pb$::RepeatedField<$Type$>& $Msg$::$name$() const {
       $annotate_list$;
       // @@protoc_insertion_point(field_list:$pkg.Msg.field$)
       return _internal_$name$();
     }
-  )cc");
-  p->Emit(R"cc(
-    inline $pb$::RepeatedField<$Type$>* $Msg$::mutable_$name$()
-        ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    inline $pb$::RepeatedField<$Type$>* $Msg$::mutable_$name$() {
       $annotate_mutable_list$;
       // @@protoc_insertion_point(field_mutable_list:$pkg.Msg.field$)
-      $TsanDetectConcurrentMutation$;
       return _internal_mutable_$name$();
     }
-  )cc");
 
-  if (should_split()) {
-    p->Emit(R"cc(
-      inline const $pb$::RepeatedField<$Type$>& $Msg$::_internal_$name$()
-          const {
-        $TsanDetectConcurrentRead$;
-        return *$field_$;
-      }
-      inline $pb$::RepeatedField<$Type$>* $Msg$::_internal_mutable_$name$() {
-        $TsanDetectConcurrentRead$;
-        $PrepareSplitMessageForWrite$;
-        if ($field_$.IsDefault()) {
-          $field_$.Set($pb$::Arena::CreateMessage<$pb$::RepeatedField<$Type$>>(
-              GetArena()));
-        }
-        return $field_$.Get();
-      }
-    )cc");
-  } else {
-    p->Emit(R"cc(
-      inline const $pb$::RepeatedField<$Type$>& $Msg$::_internal_$name$()
-          const {
-        $TsanDetectConcurrentRead$;
-        return $field_$;
-      }
-      inline $pb$::RepeatedField<$Type$>* $Msg$::_internal_mutable_$name$() {
-        $TsanDetectConcurrentRead$;
-        return &$field_$;
-      }
-    )cc");
-  }
+    inline $Type$ $Msg$::_internal_$name$(int index) const {
+      return $field_$.Get(index);
+    }
+    inline void $Msg$::_internal_add_$name$($Type$ value) { $field_$.Add(value); }
+    inline const $pb$::RepeatedField<$Type$>& $Msg$::_internal_$name$() const {
+      return $field_$;
+    }
+    inline $pb$::RepeatedField<$Type$>* $Msg$::_internal_mutable_$name$() {
+      return &$field_$;
+    }
+  )cc");
 }
 
 void RepeatedPrimitive::GenerateSerializeWithCachedSizesToArray(
@@ -547,7 +483,7 @@ void RepeatedPrimitive::GenerateSerializeWithCachedSizesToArray(
       for (int i = 0, n = this->_internal_$name$_size(); i < n; ++i) {
         target = stream->EnsureSpace(target);
         target = ::_pbi::WireFormatLite::Write$DeclaredType$ToArray(
-            $number$, this->_internal_$name$().Get(i), target);
+            $number$, this->_internal_$name$(i), target);
       }
     )cc");
     return;
@@ -562,29 +498,15 @@ void RepeatedPrimitive::GenerateSerializeWithCachedSizesToArray(
     return;
   }
 
-  p->Emit(
-      {
-          {"byte_size",
-           [&] {
-             if (HasCachedSize()) {
-               p->Emit(R"cc($_field_cached_byte_size_$.Get();)cc");
-             } else {
-               p->Emit(R"cc(
-                 ::_pbi::WireFormatLite::$DeclaredType$Size(
-                     this->_internal_$name$());
-               )cc");
-             }
-           }},
-      },
-      R"cc(
-        {
-          int byte_size = $byte_size$;
-          if (byte_size > 0) {
-            target = stream->Write$DeclaredType$Packed(
-                $number$, _internal_$name$(), byte_size, target);
-          }
-        }
-      )cc");
+  p->Emit(R"cc(
+    {
+      int byte_size = $_field_cached_byte_size_$.Get();
+      if (byte_size > 0) {
+        target = stream->Write$DeclaredType$Packed($number$, _internal_$name$(),
+                                                   byte_size, target);
+      }
+    }
+  )cc");
 }
 
 void RepeatedPrimitive::GenerateByteSize(io::Printer* p) const {
@@ -600,8 +522,7 @@ void RepeatedPrimitive::GenerateByteSize(io::Printer* p) const {
                   )cc");
                 } else {
                   p->Emit(R"cc(
-                    ::_pbi::WireFormatLite::$DeclaredType$Size(
-                        this->_internal_$name$())
+                    ::_pbi::WireFormatLite::$DeclaredType$Size(this->$field_$)
                   )cc");
                 }
               }}  // Here and below, we need to disable the default ;-chomping
@@ -646,13 +567,13 @@ void RepeatedPrimitive::GenerateByteSize(io::Printer* p) const {
 std::unique_ptr<FieldGeneratorBase> MakeSinguarPrimitiveGenerator(
     const FieldDescriptor* desc, const Options& options,
     MessageSCCAnalyzer* scc) {
-  return absl::make_unique<SingularPrimitive>(desc, options, scc);
+  return absl::make_unique<SingularPrimitive>(desc, options);
 }
 
 std::unique_ptr<FieldGeneratorBase> MakeRepeatedPrimitiveGenerator(
     const FieldDescriptor* desc, const Options& options,
     MessageSCCAnalyzer* scc) {
-  return absl::make_unique<RepeatedPrimitive>(desc, options, scc);
+  return absl::make_unique<RepeatedPrimitive>(desc, options);
 }
 
 }  // namespace cpp
