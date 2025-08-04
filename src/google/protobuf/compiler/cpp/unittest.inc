@@ -1,17 +1,40 @@
 // -*- c++ -*-
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 //
 // To test the code generator, we actually use it to generate code for
-// google/protobuf/unittest.proto, then test that.  This means that we
+// third_party/protobuf/unittest.proto, then test that.  This means that we
 // are actually testing the parser and other parts of the system at the same
 // time, and that problems in the generator may show up as compile-time errors
 // rather than unittest failures, which may be surprising.  However, testing
@@ -47,7 +70,6 @@
 #include "google/protobuf/arena.h"
 #include "google/protobuf/compiler/cpp/test_bad_identifiers.pb.h"
 #include "google/protobuf/compiler/importer.h"
-#include "google/protobuf/compiler/retention.h"
 #include "google/protobuf/compiler/scc.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/dynamic_message.h"
@@ -101,16 +123,15 @@ TEST(GENERATED_DESCRIPTOR_TEST_NAME, IdenticalDescriptors) {
 
   // Import (parse) unittest.proto.
   const FileDescriptor* parsed_descriptor =
-      importer.Import(UNITTEST_PROTO_PATH);
+      importer.Import(TestUtil::MaybeTranslatePath(UNITTEST_PROTO_PATH));
   EXPECT_EQ("", error_collector.text_);
   ASSERT_TRUE(parsed_descriptor != nullptr);
 
   // Test that descriptors are generated correctly by converting them to
   // FileDescriptorProtos and comparing.
-  FileDescriptorProto generated_descriptor_proto;
+  FileDescriptorProto generated_descriptor_proto, parsed_descriptor_proto;
   generated_descriptor->CopyTo(&generated_descriptor_proto);
-  FileDescriptorProto parsed_descriptor_proto =
-    compiler::StripSourceRetentionOptions(*parsed_descriptor);
+  parsed_descriptor->CopyTo(&parsed_descriptor_proto);
 
   EXPECT_EQ(parsed_descriptor_proto.DebugString(),
             generated_descriptor_proto.DebugString());
@@ -425,7 +446,6 @@ TEST(GENERATED_MESSAGE_TEST_NAME, SwapWithOther) {
   message1.set_optional_string("abc");
   message1.mutable_optional_nested_message()->set_bb(1);
   message1.set_optional_nested_enum(UNITTEST::TestAllTypes::FOO);
-  message1.set_optional_bytes_cord("bytes cord");
   message1.add_repeated_int32(1);
   message1.add_repeated_int32(2);
   message1.add_repeated_string("a");
@@ -439,7 +459,6 @@ TEST(GENERATED_MESSAGE_TEST_NAME, SwapWithOther) {
   message2.set_optional_string("def");
   message2.mutable_optional_nested_message()->set_bb(2);
   message2.set_optional_nested_enum(UNITTEST::TestAllTypes::BAR);
-  message2.set_optional_bytes_cord("bytes cord");
   message2.add_repeated_int32(3);
   message2.add_repeated_string("c");
   message2.add_repeated_nested_message()->set_bb(9);
@@ -451,7 +470,6 @@ TEST(GENERATED_MESSAGE_TEST_NAME, SwapWithOther) {
   EXPECT_EQ("def", message1.optional_string());
   EXPECT_EQ(2, message1.optional_nested_message().bb());
   EXPECT_EQ(UNITTEST::TestAllTypes::BAR, message1.optional_nested_enum());
-  EXPECT_EQ(absl::Cord("bytes cord"), message1.optional_bytes_cord());
   ASSERT_EQ(1, message1.repeated_int32_size());
   EXPECT_EQ(3, message1.repeated_int32(0));
   ASSERT_EQ(1, message1.repeated_string_size());
@@ -465,7 +483,6 @@ TEST(GENERATED_MESSAGE_TEST_NAME, SwapWithOther) {
   EXPECT_EQ("abc", message2.optional_string());
   EXPECT_EQ(1, message2.optional_nested_message().bb());
   EXPECT_EQ(UNITTEST::TestAllTypes::FOO, message2.optional_nested_enum());
-  EXPECT_EQ(absl::Cord("bytes cord"), message2.optional_bytes_cord());
   ASSERT_EQ(2, message2.repeated_int32_size());
   EXPECT_EQ(1, message2.repeated_int32(0));
   EXPECT_EQ(2, message2.repeated_int32(1));
@@ -1027,8 +1044,8 @@ TEST(GENERATED_ENUM_TEST_NAME, MinAndMax) {
   EXPECT_EQ(4, UNITTEST::TestAllTypes::NestedEnum_ARRAYSIZE);
 
   EXPECT_EQ(UNITTEST::FOREIGN_FOO, UNITTEST::ForeignEnum_MIN);
-  EXPECT_EQ(UNITTEST::FOREIGN_BAX, UNITTEST::ForeignEnum_MAX);
-  EXPECT_EQ(33, UNITTEST::ForeignEnum_ARRAYSIZE);
+  EXPECT_EQ(UNITTEST::FOREIGN_BAZ, UNITTEST::ForeignEnum_MAX);
+  EXPECT_EQ(7, UNITTEST::ForeignEnum_ARRAYSIZE);
 
   EXPECT_EQ(1, UNITTEST::TestEnumWithDupValue_MIN);
   EXPECT_EQ(3, UNITTEST::TestEnumWithDupValue_MAX);
@@ -1434,9 +1451,6 @@ class OneofTest : public testing::Test {
         break;
       case UNITTEST::TestOneof2::kFooLazyMessage:
         EXPECT_TRUE(message.has_foo_lazy_message());
-        break;
-      case UNITTEST::TestOneof2::kFooBytesCord:
-        EXPECT_TRUE(message.has_foo_bytes_cord());
         break;
       case UNITTEST::TestOneof2::FOO_NOT_SET:
         break;
@@ -2198,7 +2212,7 @@ TEST(DESCRIPTOR_INIT_TEST_NAME, Initialized) {
 
   EXPECT_EQ(should_have_descriptors,
             DescriptorPool::generated_pool()->InternalIsFileLoaded(
-                UNITTEST_PROTO_PATH));
+                TestUtil::MaybeTranslatePath(UNITTEST_PROTO_PATH)));
 }
 
 }  // namespace cpp_unittest

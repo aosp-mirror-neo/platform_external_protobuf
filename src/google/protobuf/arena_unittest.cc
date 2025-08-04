@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "google/protobuf/arena.h"
 
@@ -723,7 +746,7 @@ TEST(ArenaTest, SetAllocatedAcrossArenasWithReflection) {
 #if GTEST_HAS_DEATH_TEST
     EXPECT_DEBUG_DEATH(
         r->SetAllocatedMessage(arena1_message, arena2_submessage, msg_field),
-        "GetArena");
+        "GetOwningArena");
 #endif
     EXPECT_NE(arena2_submessage,
               arena1_message->mutable_optional_nested_message());
@@ -736,7 +759,7 @@ TEST(ArenaTest, SetAllocatedAcrossArenasWithReflection) {
 #if GTEST_HAS_DEATH_TEST
   EXPECT_DEBUG_DEATH(
       r->SetAllocatedMessage(heap_message, arena1_submessage, msg_field),
-      "GetArena");
+      "GetOwningArena");
 #endif
   EXPECT_NE(arena1_submessage, heap_message->mutable_optional_nested_message());
   delete heap_message;
@@ -1308,6 +1331,13 @@ TEST(ArenaTest, NoHeapAllocationsTest) {
   arena.Reset();
 }
 
+TEST(ArenaTest, ParseCorruptedString) {
+  TestAllTypes message;
+  TestUtil::SetAllFields(&message);
+  TestParseCorruptedString<TestAllTypes, true>(message);
+  TestParseCorruptedString<TestAllTypes, false>(message);
+}
+
 #if PROTOBUF_RTTI
 // Test construction on an arena via generic MessageLite interface. We should be
 // able to successfully deserialize on the arena without incurring heap
@@ -1442,21 +1472,44 @@ TEST(ArenaTest, GetArenaShouldReturnTheArenaForArenaAllocatedMessages) {
   Arena arena;
   ArenaMessage* message = Arena::CreateMessage<ArenaMessage>(&arena);
   const ArenaMessage* const_pointer_to_message = message;
-  EXPECT_EQ(&arena, message->GetArena());
-  EXPECT_EQ(&arena, const_pointer_to_message->GetArena());
+  EXPECT_EQ(&arena, Arena::GetArena(message));
+  EXPECT_EQ(&arena, Arena::GetArena(const_pointer_to_message));
 
   // Test that the Message* / MessageLite* specialization SFINAE works.
   const Message* const_pointer_to_message_type = message;
-  EXPECT_EQ(&arena, const_pointer_to_message_type->GetArena());
+  EXPECT_EQ(&arena, Arena::GetArena(const_pointer_to_message_type));
   const MessageLite* const_pointer_to_message_lite_type = message;
-  EXPECT_EQ(&arena, const_pointer_to_message_lite_type->GetArena());
+  EXPECT_EQ(&arena, Arena::GetArena(const_pointer_to_message_lite_type));
 }
 
 TEST(ArenaTest, GetArenaShouldReturnNullForNonArenaAllocatedMessages) {
   ArenaMessage message;
   const ArenaMessage* const_pointer_to_message = &message;
-  EXPECT_EQ(nullptr, message.GetArena());
-  EXPECT_EQ(nullptr, const_pointer_to_message->GetArena());
+  EXPECT_EQ(nullptr, Arena::GetArena(&message));
+  EXPECT_EQ(nullptr, Arena::GetArena(const_pointer_to_message));
+}
+
+TEST(ArenaTest, GetArenaShouldReturnNullForNonArenaCompatibleTypes) {
+  // Test that GetArena returns nullptr for types that have a GetArena method
+  // that doesn't return Arena*.
+  struct {
+    int GetArena() const { return 0; }
+  } has_get_arena_method_wrong_return_type;
+  EXPECT_EQ(nullptr, Arena::GetArena(&has_get_arena_method_wrong_return_type));
+
+  // Test that GetArena returns nullptr for types that have a GetArena alias.
+  struct {
+    using GetArena = Arena*;
+    GetArena unused;
+  } has_get_arena_alias;
+  EXPECT_EQ(nullptr, Arena::GetArena(&has_get_arena_alias));
+
+  // Test that GetArena returns nullptr for types that have a GetArena data
+  // member.
+  struct {
+    Arena GetArena;
+  } has_get_arena_data_member;
+  EXPECT_EQ(nullptr, Arena::GetArena(&has_get_arena_data_member));
 }
 
 TEST(ArenaTest, AddCleanup) {
