@@ -32,13 +32,11 @@
 
 package com.google.protobuf.jruby;
 
-import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.LegacyDescriptorsUtil.LegacyFileDescriptor;
+import com.google.protobuf.Descriptors.FileDescriptor;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -101,10 +99,6 @@ public class RubyFieldDescriptor extends RubyObject {
   @JRubyMethod(name = "name")
   public IRubyObject getName(ThreadContext context) {
     return this.name;
-  }
-
-  protected void setName(IRubyObject name) {
-    this.name = name;
   }
 
   /*
@@ -233,30 +227,14 @@ public class RubyFieldDescriptor extends RubyObject {
    */
   @JRubyMethod(name = "set")
   public IRubyObject setValue(ThreadContext context, IRubyObject message, IRubyObject value) {
-    ((RubyMessage) message).setField(context, this, value);
+    ((RubyMessage) message).setField(context, descriptor, value);
     return context.nil;
-  }
-
-  @JRubyMethod
-  public IRubyObject options(ThreadContext context) {
-    RubyDescriptor fieldOptionsDescriptor =
-        (RubyDescriptor)
-            pool.lookup(context, context.runtime.newString("google.protobuf.FieldOptions"));
-    RubyClass fieldOptionsClass = (RubyClass) fieldOptionsDescriptor.msgclass(context);
-    RubyMessage msg = (RubyMessage) fieldOptionsClass.newInstance(context, Block.NULL_BLOCK);
-    return msg.decodeBytes(
-        context,
-        msg,
-        CodedInputStream.newInstance(
-            descriptor.getOptions().toByteString().toByteArray()), /*freeze*/
-        true);
   }
 
   protected void setDescriptor(
       ThreadContext context, FieldDescriptor descriptor, RubyDescriptorPool pool) {
     if (descriptor.isRequired()
-        && LegacyFileDescriptor.getSyntax(descriptor.getFile())
-            == LegacyFileDescriptor.Syntax.PROTO3) {
+        && descriptor.getFile().getSyntax() == FileDescriptor.Syntax.PROTO3) {
       throw Utils.createTypeError(
           context,
           descriptor.getName()
@@ -265,10 +243,6 @@ public class RubyFieldDescriptor extends RubyObject {
     this.descriptor = descriptor;
     this.name = context.runtime.newString(descriptor.getName());
     this.pool = pool;
-  }
-
-  protected FieldDescriptor getDescriptor() {
-    return descriptor;
   }
 
   private void calculateLabel(ThreadContext context) {

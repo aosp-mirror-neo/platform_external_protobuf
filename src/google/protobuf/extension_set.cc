@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -17,9 +40,9 @@
 #include <utility>
 
 #include "google/protobuf/stubs/common.h"
+#include "google/protobuf/arena.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
-#include "google/protobuf/arena.h"
 #include "google/protobuf/extension_set_inl.h"
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/message_lite.h"
@@ -156,6 +179,14 @@ void ExtensionSet::RegisterMessageExtension(const MessageLite* extendee,
 
 // ===================================================================
 // Constructors and basic methods.
+
+ExtensionSet::ExtensionSet(Arena* arena)
+    : arena_(arena),
+      flat_capacity_(0),
+      flat_size_(0),
+      map_{flat_capacity_ == 0
+               ? nullptr
+               : Arena::CreateArray<KeyValue>(arena_, flat_capacity_)} {}
 
 ExtensionSet::~ExtensionSet() {
   // Deletes all allocated extensions.
@@ -626,8 +657,9 @@ void ExtensionSet::SetAllocatedMessage(int number, FieldType type,
     ClearExtension(number);
     return;
   }
-  ABSL_DCHECK(message->GetArena() == nullptr || message->GetArena() == arena_);
-  Arena* message_arena = message->GetArena();
+  ABSL_DCHECK(message->GetOwningArena() == nullptr ||
+              message->GetOwningArena() == arena_);
+  Arena* message_arena = message->GetOwningArena();
   Extension* extension;
   if (MaybeNewExtension(number, descriptor, &extension)) {
     extension->type = type;
@@ -1099,7 +1131,7 @@ void ExtensionSet::Swap(const MessageLite* extendee, ExtensionSet* other) {
 #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
     InternalSwap(other);
   } else {
-    // TODO: We maybe able to optimize a case where we are
+    // TODO(cfallin, rohananil): We maybe able to optimize a case where we are
     // swapping from heap to arena-allocated extension set, by just Own()'ing
     // the extensions.
     ExtensionSet extension_set;
@@ -1134,7 +1166,7 @@ void ExtensionSet::SwapExtension(const MessageLite* extendee,
   if (this_ext == other_ext) return;
 
   if (this_ext != nullptr && other_ext != nullptr) {
-    // TODO: We could further optimize these cases,
+    // TODO(cfallin, rohananil): We could further optimize these cases,
     // especially avoid creation of ExtensionSet, and move MergeFrom logic
     // into Extensions itself (which takes arena as an argument).
     // We do it this way to reuse the copy-across-arenas logic already
@@ -1442,8 +1474,8 @@ size_t ExtensionSet::Extension::ByteSize(int number) const {
 #undef HANDLE_TYPE
       case WireFormatLite::TYPE_MESSAGE: {
         if (is_lazy) {
-          // LazyField::ByteSizeLong includes sizeof(length).
-          result += lazymessage_value->ByteSizeLong();
+          size_t size = lazymessage_value->ByteSizeLong();
+          result += io::CodedOutputStream::VarintSize32(size) + size;
         } else {
           result += WireFormatLite::MessageSize(*message_value);
         }
@@ -1907,11 +1939,15 @@ size_t ExtensionSet::Extension::MessageSetItemByteSize(int number) const {
   our_size += io::CodedOutputStream::VarintSize32(number);
 
   // message
+  size_t message_size = 0;
   if (is_lazy) {
-    our_size += lazymessage_value->ByteSizeLong();
+    message_size = lazymessage_value->ByteSizeLong();
   } else {
-    our_size += WireFormatLite::MessageSize(*message_value);
+    message_size = message_value->ByteSizeLong();
   }
+
+  our_size += io::CodedOutputStream::VarintSize32(message_size);
+  our_size += message_size;
 
   return our_size;
 }
