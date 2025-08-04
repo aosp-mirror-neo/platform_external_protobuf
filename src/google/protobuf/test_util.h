@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -223,8 +246,6 @@ inline void TestUtil::ReflectionTester::SetAllFieldsViaReflection(
 
   reflection->SetString(message, F("optional_string_piece"), "124");
   reflection->SetString(message, F("optional_cord"), "125");
-  reflection->SetString(message, F("optional_bytes_cord"),
-                        "optional bytes cord");
 
   sub_message =
       reflection->MutableMessage(message, F("optional_public_import_message"));
@@ -493,7 +514,6 @@ inline void TestUtil::ReflectionTester::ExpectAllFieldsSetViaReflection1(
 
   EXPECT_TRUE(reflection->HasField(message, F("optional_string_piece")));
   EXPECT_TRUE(reflection->HasField(message, F("optional_cord")));
-  EXPECT_TRUE(reflection->HasField(message, F("optional_bytes_cord")));
 
   EXPECT_EQ(101, reflection->GetInt32(message, F("optional_int32")));
   EXPECT_EQ(102, reflection->GetInt64(message, F("optional_int64")));
@@ -554,14 +574,6 @@ inline void TestUtil::ReflectionTester::ExpectAllFieldsSetViaReflection1(
   EXPECT_EQ("125", reflection->GetString(message, F("optional_cord")));
   EXPECT_EQ("125", reflection->GetStringReference(message, F("optional_cord"),
                                                   &scratch));
-
-  EXPECT_EQ("optional bytes cord",
-            reflection->GetString(message, F("optional_bytes_cord")));
-  EXPECT_EQ("optional bytes cord",
-            reflection->GetStringReference(message, F("optional_bytes_cord"),
-                                           &scratch));
-  EXPECT_EQ("optional bytes cord",
-            reflection->GetCord(message, F("optional_bytes_cord")));
 
   EXPECT_TRUE(reflection->HasField(message, F("oneof_bytes")));
   EXPECT_EQ("604", reflection->GetString(message, F("oneof_bytes")));
@@ -923,7 +935,6 @@ inline void TestUtil::ReflectionTester::ExpectClearViaReflection(
 
   EXPECT_FALSE(reflection->HasField(message, F("optional_string_piece")));
   EXPECT_FALSE(reflection->HasField(message, F("optional_cord")));
-  EXPECT_FALSE(reflection->HasField(message, F("optional_bytes_cord")));
 
   // Optional fields without defaults are set to zero or something like it.
   EXPECT_EQ(0, reflection->GetInt32(message, F("optional_int32")));
@@ -989,11 +1000,6 @@ inline void TestUtil::ReflectionTester::ExpectClearViaReflection(
   EXPECT_EQ("", reflection->GetString(message, F("optional_cord")));
   EXPECT_EQ("", reflection->GetStringReference(message, F("optional_cord"),
                                                &scratch));
-
-  EXPECT_EQ("", reflection->GetString(message, F("optional_bytes_cord")));
-  EXPECT_EQ("", reflection->GetStringReference(
-                    message, F("optional_bytes_cord"), &scratch));
-  EXPECT_EQ("", reflection->GetCord(message, F("optional_bytes_cord")));
 
   // Repeated fields are empty.
   EXPECT_EQ(0, reflection->FieldSize(message, F("repeated_int32")));

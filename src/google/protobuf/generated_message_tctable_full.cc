@@ -47,13 +47,11 @@ namespace internal {
 using ::google::protobuf::internal::DownCast;
 
 const char* TcParser::GenericFallback(PROTOBUF_TC_PARAM_DECL) {
-  PROTOBUF_MUSTTAIL return GenericFallbackImpl<Message, UnknownFieldSet>(
-      PROTOBUF_TC_PARAM_PASS);
+  return GenericFallbackImpl<Message, UnknownFieldSet>(PROTOBUF_TC_PARAM_PASS);
 }
 
 const char* TcParser::ReflectionFallback(PROTOBUF_TC_PARAM_DECL) {
-  bool must_fallback_to_generic = (ptr == nullptr);
-  if (PROTOBUF_PREDICT_FALSE(must_fallback_to_generic)) {
+  if (PROTOBUF_PREDICT_FALSE(MustFallbackToGeneric(PROTOBUF_TC_PARAM_PASS))) {
     PROTOBUF_MUSTTAIL return GenericFallback(PROTOBUF_TC_PARAM_PASS);
   }
 

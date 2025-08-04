@@ -48,7 +48,6 @@ namespace Google.Protobuf.WellKnownTypes {
   ///       rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);
   ///     }
   /// </summary>
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Empty : pb::IMessage<Empty>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
