@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Author: dweis@google.com (Daniel Weis)
 //  Based on original Protocol Buffers design by
@@ -31,7 +54,6 @@
 #include "google/protobuf/compiler/java/message_builder_lite.h"
 #include "google/protobuf/compiler/java/name_resolver.h"
 #include "google/protobuf/descriptor.pb.h"
-#include "google/protobuf/descriptor_legacy.h"
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/io/printer.h"
 #include "google/protobuf/wire_format.h"
@@ -71,7 +93,7 @@ void ImmutableMessageLiteGenerator::GenerateStaticVariables(
     io::Printer* printer, int* bytecode_estimate) {
   // Generate static members for all nested types.
   for (int i = 0; i < descriptor_->nested_type_count(); i++) {
-    // TODO:  Reuse MessageGenerator objects?
+    // TODO(kenton):  Reuse MessageGenerator objects?
     ImmutableMessageLiteGenerator(descriptor_->nested_type(i), context_)
         .GenerateStaticVariables(printer, bytecode_estimate);
   }
@@ -82,7 +104,7 @@ int ImmutableMessageLiteGenerator::GenerateStaticVariableInitializers(
   int bytecode_estimate = 0;
   // Generate static member initializers for all nested types.
   for (int i = 0; i < descriptor_->nested_type_count(); i++) {
-    // TODO:  Reuse MessageGenerator objects?
+    // TODO(kenton):  Reuse MessageGenerator objects?
     bytecode_estimate +=
         ImmutableMessageLiteGenerator(descriptor_->nested_type(i), context_)
             .GenerateStaticVariableInitializers(printer);
@@ -282,7 +304,7 @@ void ImmutableMessageLiteGenerator::Generate(io::Printer* printer) {
         "    default: return null;\n"
         "  }\n"
         "}\n"
-        // TODO: Rename this to "getFieldNumber" or something to
+        // TODO(b/135620659): Rename this to "getFieldNumber" or something to
         // disambiguate it from actual proto enums.
         "public int getNumber() {\n"
         "  return this.value;\n"
@@ -485,18 +507,12 @@ void ImmutableMessageLiteGenerator::GenerateDynamicMethodNewBuildMessageInfo(
   std::vector<uint16_t> chars;
 
   int flags = 0;
-  if (FileDescriptorLegacy(descriptor_->file()).syntax() ==
-      FileDescriptorLegacy::Syntax::SYNTAX_PROTO2) {
+  if (IsProto2(descriptor_->file())) {
     flags |= 0x1;
   }
   if (descriptor_->options().message_set_wire_format()) {
     flags |= 0x2;
   }
-  if (FileDescriptorLegacy(descriptor_->file()).syntax() ==
-      FileDescriptorLegacy::Syntax::SYNTAX_EDITIONS) {
-    flags |= 0x4;
-  }
-
   WriteIntToUtf16CharSequence(flags, &chars);
   WriteIntToUtf16CharSequence(descriptor_->field_count(), &chars);
 
@@ -638,13 +654,11 @@ void ImmutableMessageLiteGenerator::GenerateParseFromMethods(
       "  return com.google.protobuf.GeneratedMessageLite.parseFrom(\n"
       "      DEFAULT_INSTANCE, input, extensionRegistry);\n"
       "}\n"
-      "$parsedelimitedreturnannotation$\n"
       "public static $classname$ parseDelimitedFrom(java.io.InputStream "
       "input)\n"
       "    throws java.io.IOException {\n"
       "  return parseDelimitedFrom(DEFAULT_INSTANCE, input);\n"
       "}\n"
-      "$parsedelimitedreturnannotation$\n"
       "public static $classname$ parseDelimitedFrom(\n"
       "    java.io.InputStream input,\n"
       "    com.google.protobuf.ExtensionRegistryLite extensionRegistry)\n"
@@ -666,11 +680,7 @@ void ImmutableMessageLiteGenerator::GenerateParseFromMethods(
       "      DEFAULT_INSTANCE, input, extensionRegistry);\n"
       "}\n"
       "\n",
-      "classname", name_resolver_->GetImmutableClassName(descriptor_),
-      "parsedelimitedreturnannotation",
-      context_->options().opensource_runtime
-          ? ""
-          : "@com.google.protobuf.Internal.ProtoMethodMayReturnNull");
+      "classname", name_resolver_->GetImmutableClassName(descriptor_));
 }
 
 // ===================================================================
@@ -681,7 +691,7 @@ void ImmutableMessageLiteGenerator::GenerateBuilder(io::Printer* printer) {
       "  return (Builder) DEFAULT_INSTANCE.createBuilder();\n"
       "}\n"
       "public static Builder newBuilder($classname$ prototype) {\n"
-      "  return DEFAULT_INSTANCE.createBuilder(prototype);\n"
+      "  return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);\n"
       "}\n"
       "\n",
       "classname", name_resolver_->GetImmutableClassName(descriptor_));
@@ -841,7 +851,8 @@ void ImmutableMessageLiteGenerator::GenerateTopLevelKotlinMembers(
       "message",
       EscapeKotlinKeywords(name_resolver_->GetClassName(descriptor_, true)),
       "message_kt",
-      name_resolver_->GetKotlinExtensionsClassNameEscaped(descriptor_));
+      EscapeKotlinKeywords(
+          name_resolver_->GetKotlinExtensionsClassName(descriptor_)));
 
   for (int i = 0; i < descriptor_->nested_type_count(); i++) {
     if (IsMapEntry(descriptor_->nested_type(i))) continue;
@@ -852,8 +863,7 @@ void ImmutableMessageLiteGenerator::GenerateTopLevelKotlinMembers(
   GenerateKotlinOrNull(printer);
 }
 
-void ImmutableMessageLiteGenerator::GenerateKotlinOrNull(
-    io::Printer* printer) const {
+void ImmutableMessageLiteGenerator::GenerateKotlinOrNull(io::Printer* printer) const {
   // Generate getFieldOrNull getters for all optional message fields.
   for (int i = 0; i < descriptor_->field_count(); i++) {
     const FieldDescriptor* field = descriptor_->field(i);

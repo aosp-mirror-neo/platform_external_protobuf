@@ -8,9 +8,6 @@ on:
         description: "The SHA key for the commit we want to run over"
         type: string
 
-permissions:
-  contents: read
-
 jobs:
   xcode:
     strategy:
@@ -25,27 +22,27 @@ jobs:
           destination: "platform=macOS"
           xc_project: "ProtocolBuffers_OSX.xcodeproj"
         - platform: "iOS"
-          destination: "platform=iOS Simulator,name=iPhone 14,OS=latest"
+          destination: "platform=iOS Simulator,name=iPhone 13,OS=latest"
           xc_project: "ProtocolBuffers_iOS.xcodeproj"
 
     name: Xcode ${{ matrix.platform}} ${{ matrix.xc_config }}
-    runs-on: macos-13
+    runs-on: macos-12
     env:
       DEVELOPER_DIR: /Applications/Xcode_14.1.app/Contents/Developer
     steps:
       - name: Checkout pending changes
-        uses: protocolbuffers/protobuf-ci/checkout@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           ref: ${{ inputs.safe-checkout }}
 
       - name: Setup ccache
-        uses: protocolbuffers/protobuf-ci/ccache@v2
+        uses: ./.github/actions/ccache
         with:
           cache-prefix: objectivec_${{ matrix.platform }}_${{ matrix.xc_config }}
           support-modules: true
 
       - name: Run tests
-        uses: protocolbuffers/protobuf-ci/bash@v2
+        uses: ./.github/actions/bash
         env:
           CC: ${{ github.workspace }}/ci/clang_wrapper
           CXX: ${{ github.workspace }}/ci/clang_wrapper++
@@ -72,16 +69,16 @@ jobs:
         PLATFORM: ["ios", "macos", "tvos"]
         CONFIGURATION: ["Debug", "Release"]
     name: CocoaPods ${{ matrix.PLATFORM}} ${{ matrix.CONFIGURATION}}
-    runs-on: macos-13
+    runs-on: macos-12
     env:
       DEVELOPER_DIR: /Applications/Xcode_14.1.app/Contents/Developer
     steps:
       - name: Checkout pending changes
-        uses: protocolbuffers/protobuf-ci/checkout@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           ref: ${{ inputs.safe-checkout }}
       - name: Pod lib lint
-        uses: protocolbuffers/protobuf-ci/bash@v2
+        uses: ./.github/actions/bash
         with:
           credentials: ${{ secrets.GAR_SERVICE_ACCOUNT }}
           command: |
@@ -115,14 +112,14 @@ jobs:
         - platform: "macOS"
           bazel_targets: //objectivec/...
     name: Bazel ${{ matrix.platform }} ${{ matrix.config.name }}
-    runs-on: macos-13
+    runs-on: macos-12
     steps:
       - name: Checkout pending changes
-        uses: protocolbuffers/protobuf-ci/checkout@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           ref: ${{ inputs.safe-checkout }}
       - name: bazel ${{ matrix.config.bazel_action }}
-        uses: protocolbuffers/protobuf-ci/bazel@v2
+        uses: ./.github/actions/bazel
         with:
           credentials: ${{ secrets.GAR_SERVICE_ACCOUNT }}
           bazel: ${{ matrix.config.bazel_action }} ${{ matrix.config.flags }} ${{ matrix.bazel_targets }}

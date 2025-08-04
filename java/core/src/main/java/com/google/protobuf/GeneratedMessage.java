@@ -1,9 +1,32 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.google.protobuf;
 
@@ -21,13 +44,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 
 /**
  * All generated protocol message classes extend this class. This class implements most of the
@@ -38,7 +58,6 @@ import java.util.logging.Logger;
  */
 public abstract class GeneratedMessage extends AbstractMessage implements Serializable {
   private static final long serialVersionUID = 1L;
-  private static final Logger logger = Logger.getLogger(GeneratedMessage.class.getName());
 
   /**
    * For testing. Allows a test to disable the optimization that avoids using field builders for
@@ -314,57 +333,19 @@ public abstract class GeneratedMessage extends AbstractMessage implements Serial
     return memoizedSize;
   }
 
-  static final String PRE22_GENCODE_SILENCE_PROPERTY =
-      "com.google.protobuf.use_unsafe_pre22_gencode";
-  static final String PRE22_GENCODE_ERROR_PROPERTY =
-      "com.google.protobuf.error_on_unsafe_pre22_gencode";
-
-  static final String PRE22_GENCODE_VULNERABILITY_MESSAGE =
-      "As of 2022/09/29 (release 21.7) makeExtensionsImmutable should not be called from protobuf"
-          + " gencode. If you are seeing this message, your gencode is vulnerable to a denial of"
-          + " service attack. You should regenerate your code using protobuf 25.6 or later. Use the"
-          + " latest version that meets your needs. However, if you understand the risks and wish"
-          + " to continue with vulnerable gencode, you can set the system property"
-          + " `-Dcom.google.protobuf.use_unsafe_pre22_gencode` on the command line to silence this"
-          + " warning. You also can set"
-          + " `-Dcom.google.protobuf.error_on_unsafe_pre22_gencode` to throw an error instead. See"
-          + " security vulnerability:"
-          + " https://github.com/protocolbuffers/protobuf/security/advisories/GHSA-h4h5-3hr4-j3g2";
-
-  private static final Set<String> loggedPre22TypeNames
-      = Collections.synchronizedSet(new HashSet<String>());
-  static void warnPre22Gencode(Class<?> messageClass) {
-    if (System.getProperty(PRE22_GENCODE_SILENCE_PROPERTY) != null) {
-      return;
-    }
-    String messageName = messageClass.getName();
-    String vulnerabilityMessage =
-          "Vulnerable protobuf generated type in use: " + messageName + "\n" +
-          PRE22_GENCODE_VULNERABILITY_MESSAGE;
-
-    if (System.getProperty(PRE22_GENCODE_ERROR_PROPERTY) != null) {
-      throw new UnsupportedOperationException(vulnerabilityMessage);
-    }
-
-    if (!loggedPre22TypeNames.add(messageName)) {
-      return;
-    }
-    logger.warning(vulnerabilityMessage);
-  }
-
   /** Used by parsing constructors in generated classes. */
   protected void makeExtensionsImmutable() {
-    warnPre22Gencode(getClass());
+    // Noop for messages without extensions.
   }
 
   /**
-   * TODO: remove this after b/29368482 is fixed. We need to move this interface to
+   * TODO(xiaofeng): remove this after b/29368482 is fixed. We need to move this interface to
    * AbstractMessage in order to versioning GeneratedMessage but this move breaks binary
    * compatibility for AppEngine. After AppEngine is fixed we can exclude this from google3.
    */
   protected interface BuilderParent extends AbstractMessage.BuilderParent {}
 
-  /** TODO: remove this together with GeneratedMessage.BuilderParent. */
+  /** TODO(xiaofeng): remove this together with GeneratedMessage.BuilderParent. */
   protected abstract Message.Builder newBuilderForType(BuilderParent parent);
 
   @Override
@@ -944,7 +925,6 @@ public abstract class GeneratedMessage extends AbstractMessage implements Serial
     /** Used by parsing constructors in generated classes. */
     @Override
     protected void makeExtensionsImmutable() {
-      warnPre22Gencode(getClass());
       extensions.makeImmutable();
     }
 
@@ -982,7 +962,7 @@ public abstract class GeneratedMessage extends AbstractMessage implements Serial
               output.writeMessageSetExtension(descriptor.getNumber(), (Message) next.getValue());
             }
           } else {
-            // TODO: Taken care of following code, it may cause
+            // TODO(xiangl): Taken care of following code, it may cause
             // problem when we use LazyField for normal fields/extensions.
             // Due to the optional field can be duplicated at the end of
             // serialized bytes, which will make the serialized size change
@@ -1698,7 +1678,7 @@ public abstract class GeneratedMessage extends AbstractMessage implements Serial
    */
   public static class GeneratedExtension<ContainingType extends Message, Type>
       extends Extension<ContainingType, Type> {
-    // TODO:  Find ways to avoid using Java reflection within this
+    // TODO(kenton):  Find ways to avoid using Java reflection within this
     //   class.  Also try to avoid suppressing unchecked warnings.
 
     // We can't always initialize the descriptor of a GeneratedExtension when
@@ -2666,7 +2646,7 @@ public abstract class GeneratedMessage extends AbstractMessage implements Serial
         valueOfMethod = getMethodOrDie(type, "valueOf", EnumValueDescriptor.class);
         getValueDescriptorMethod = getMethodOrDie(type, "getValueDescriptor");
 
-        supportUnknownEnumValue = !descriptor.legacyEnumFieldTreatedAsClosed();
+        supportUnknownEnumValue = descriptor.getFile().supportsUnknownEnumValue();
         if (supportUnknownEnumValue) {
           getValueMethod = getMethodOrDie(messageClass, "get" + camelCaseName + "Value");
           getValueMethodBuilder = getMethodOrDie(builderClass, "get" + camelCaseName + "Value");
@@ -2725,7 +2705,7 @@ public abstract class GeneratedMessage extends AbstractMessage implements Serial
         valueOfMethod = getMethodOrDie(type, "valueOf", EnumValueDescriptor.class);
         getValueDescriptorMethod = getMethodOrDie(type, "getValueDescriptor");
 
-        supportUnknownEnumValue = !descriptor.legacyEnumFieldTreatedAsClosed();
+        supportUnknownEnumValue = descriptor.getFile().supportsUnknownEnumValue();
         if (supportUnknownEnumValue) {
           getRepeatedValueMethod =
               getMethodOrDie(messageClass, "get" + camelCaseName + "Value", int.class);

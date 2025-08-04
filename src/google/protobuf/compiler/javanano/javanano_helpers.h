@@ -184,7 +184,9 @@ void SetBitOperationVariables(const std::string name,
     int bitIndex, std::map<std::string, std::string>* variables);
 
 inline bool IsMapEntry(const Descriptor* descriptor) {
-  return descriptor->options().map_entry();
+  // TODO(liujisi): Add an option to turn on maps for proto2 syntax as well.
+  return descriptor->options().map_entry() &&
+      descriptor->file()->syntax() == FileDescriptor::SYNTAX_PROTO3;
 }
 
 bool HasMapField(const Descriptor* descriptor);
