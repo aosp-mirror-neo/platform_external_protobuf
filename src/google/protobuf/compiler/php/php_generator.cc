@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "google/protobuf/compiler/php/php_generator.h"
 
@@ -45,8 +22,10 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/compiler/retention.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
+#include "google/protobuf/descriptor_legacy.h"
 #include "google/protobuf/io/printer.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 
@@ -258,6 +237,20 @@ std::string DefaultForField(const FieldDescriptor* field) {
     case FieldDescriptor::TYPE_GROUP: return "null";
     default: assert(false); return "";
   }
+}
+
+std::string DeprecatedConditionalForField(const FieldDescriptor* field) {
+  if (field->is_repeated()) {
+    return absl::StrCat("$this->", field->name(), "->count() !== 0");
+  }
+  if (field->real_containing_oneof() != nullptr) {
+    return absl::StrCat("$this->hasOneof(", field->number(), ")");
+  }
+  if (field->has_presence()) {
+    return absl::StrCat("isset($this->", field->name(), ")");
+  }
+  return absl::StrCat("$this->", field->name(), " !== ",
+                      field->has_presence() ? "null" : DefaultForField(field));
 }
 
 std::string GeneratedMetadataFileName(const FileDescriptor* file,
@@ -600,6 +593,12 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
           ? absl::StrCat("@trigger_error('", field->name(),
                          " is deprecated.', E_USER_DEPRECATED);\n        ")
           : "";
+  std::string deprecation_trigger_with_conditional =
+      (field->options().deprecated())
+          ? absl::StrCat("if (" + DeprecatedConditionalForField(field),
+                         ") {\n            ", deprecation_trigger,
+                         "}\n        ")
+          : "";
 
   // Emit getter.
   if (oneof != NULL) {
@@ -610,7 +609,7 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
         "}\n\n",
         "camel_name", UnderscoresToCamelCase(field->name(), true),
         "number", IntToString(field->number()),
-        "deprecation_trigger", deprecation_trigger);
+        "deprecation_trigger", deprecation_trigger_with_conditional);
   } else if (field->has_presence() && !field->message_type()) {
     printer->Print(
         "public function get^camel_name^()\n"
@@ -620,7 +619,7 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
         "camel_name", UnderscoresToCamelCase(field->name(), true),
         "name", field->name(),
         "default_value", DefaultForField(field),
-        "deprecation_trigger", deprecation_trigger);
+        "deprecation_trigger", deprecation_trigger_with_conditional);
   } else {
     printer->Print(
         "public function get^camel_name^()\n"
@@ -629,7 +628,7 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
         "}\n\n",
         "camel_name", UnderscoresToCamelCase(field->name(), true),
         "name", field->name(),
-        "deprecation_trigger", deprecation_trigger);
+        "deprecation_trigger", deprecation_trigger_with_conditional);
   }
 
   // Emit hazzers/clear.
@@ -641,13 +640,13 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
         "}\n\n",
         "camel_name", UnderscoresToCamelCase(field->name(), true),
         "number", IntToString(field->number()),
-        "deprecation_trigger", deprecation_trigger);
+        "deprecation_trigger", deprecation_trigger_with_conditional);
   } else if (field->has_presence()) {
     printer->Print(
         "public function has^camel_name^()\n"
         "{\n"
-        "    ^deprecation_trigger^return isset($this->^name^);\n"
-        "}\n\n"
+        "    ^deprecation_trigger_with_conditional^return isset($this->^name^);"
+        "\n}\n\n"
         "public function clear^camel_name^()\n"
         "{\n"
         "    ^deprecation_trigger^unset($this->^name^);\n"
@@ -655,7 +654,9 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
         "camel_name", UnderscoresToCamelCase(field->name(), true),
         "name", field->name(),
         "default_value", DefaultForField(field),
-        "deprecation_trigger", deprecation_trigger);
+        "deprecation_trigger", deprecation_trigger,
+        "deprecation_trigger_with_conditional",
+        deprecation_trigger_with_conditional);
   }
 
   // For wrapper types, generate an additional getXXXUnwrapped getter
@@ -671,7 +672,7 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
         "}\n\n",
         "camel_name", UnderscoresToCamelCase(field->name(), true),
         "field_name", field->name(),
-        "deprecation_trigger", deprecation_trigger);
+        "deprecation_trigger", deprecation_trigger_with_conditional);
   }
 
   // Generate setter.
@@ -683,7 +684,8 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
 
   Indent(printer);
 
-  if (field->options().deprecated()) {
+  if (field->options().deprecated() && !field->is_map() &&
+      !field->is_repeated()) {
       printer->Print(
           "^deprecation_trigger^",
           "deprecation_trigger", deprecation_trigger
@@ -745,6 +747,12 @@ void GenerateFieldAccessor(const FieldDescriptor* field, const Options& options,
     printer->Print(
         "GPBUtil::check^type^($var);\n",
         "type", UnderscoresToCamelCase(field->cpp_type_name(), true));
+  }
+
+  if (field->options().deprecated() &&
+      (field->is_map() || field->is_repeated())) {
+    printer->Print("if ($arr->count() !== 0) {\n    ^deprecation_trigger^}\n",
+                   "deprecation_trigger", deprecation_trigger);
   }
 
   if (oneof != NULL) {
@@ -942,7 +950,7 @@ void GenerateAddFileToPool(const FileDescriptor* file, const Options& options,
       // Add messages and enums to descriptor pool.
       FileDescriptorSet files;
       FileDescriptorProto* file_proto = files.add_file();
-      file->CopyTo(file_proto);
+      *file_proto = StripSourceRetentionOptions(*file);
 
       // Filter out descriptor.proto as it cannot be depended on for now.
       RepeatedPtrField<std::string>* dependency =
@@ -1085,7 +1093,7 @@ void GenerateAddFilesToPool(const FileDescriptor* file, const Options& options,
 
     if (needs_aggregate) {
       auto file_proto = sorted_file_set.add_file();
-      file_node->CopyTo(file_proto);
+      *file_proto = StripSourceRetentionOptions(*file_node);
 
       // Filter out descriptor.proto as it cannot be depended on for now.
       RepeatedPtrField<std::string>* dependency =
@@ -1676,7 +1684,7 @@ static void GenerateDocCommentBodyForLocation(
                              ? location.trailing_comments
                              : location.leading_comments;
   if (!comments.empty()) {
-    // TODO(teboring):  Ideally we should parse the comment text as Markdown and
+    // TODO:  Ideally we should parse the comment text as Markdown and
     //   write it back as HTML, but this requires a Markdown parser.  For now
     //   we just use the proto comments unchanged.
 
@@ -1731,6 +1739,10 @@ void GenerateMessageDocComment(io::Printer* printer, const Descriptor* message,
                                const Options& options) {
   printer->Print("/**\n");
   GenerateDocCommentBody(printer, message);
+  if (message->options().deprecated()) {
+    printer->Print(" * @deprecated\n");
+  }
+
   printer->Print(
     " * Generated from protobuf message <code>^messagename^</code>\n"
     " */\n",
@@ -1772,6 +1784,9 @@ void GenerateMessageConstructorDocComment(io::Printer* printer,
 void GenerateServiceDocComment(io::Printer* printer,
                                const ServiceDescriptor* service) {
   printer->Print("/**\n");
+  if (service->options().deprecated()) {
+    printer->Print(" * @deprecated\n");
+  }
   GenerateDocCommentBody(printer, service);
   printer->Print(
     " * Protobuf type <code>^fullname^</code>\n"
@@ -1849,6 +1864,9 @@ void GenerateWrapperFieldSetterDocComment(io::Printer* printer, const FieldDescr
 void GenerateEnumDocComment(io::Printer* printer, const EnumDescriptor* enum_,
                             const Options& options) {
   printer->Print("/**\n");
+  if (enum_->options().deprecated()) {
+    printer->Print(" * @deprecated\n");
+  }
   GenerateDocCommentBody(printer, enum_);
   printer->Print(
     " * Protobuf type <code>^fullname^</code>\n"
@@ -1870,6 +1888,9 @@ void GenerateServiceMethodDocComment(io::Printer* printer,
                                      const MethodDescriptor* method) {
   printer->Print("/**\n");
   GenerateDocCommentBody(printer, method);
+  if (method->options().deprecated()) {
+    printer->Print(" * @deprecated\n");
+  }
   printer->Print(
     " * Method <code>^method_name^</code>\n"
     " *\n",
@@ -2178,8 +2199,7 @@ void GenerateCWellKnownTypes(const std::vector<const FileDescriptor*>& files,
         absl::StrReplaceAll(metadata_classname, {{"\\", "_"}});
     metadata_classname =
         absl::StrReplaceAll(metadata_classname, {{"\\", "\\\\"}});
-    FileDescriptorProto file_proto;
-    file->CopyTo(&file_proto);
+    FileDescriptorProto file_proto = StripSourceRetentionOptions(*file);
     std::string serialized;
     file_proto.SerializeToString(&serialized);
     printer.Print(
@@ -2292,7 +2312,9 @@ bool Generator::Generate(const FileDescriptor* file, const Options& options,
     return false;
   }
 
-  if (!options.is_descriptor && file->syntax() != FileDescriptor::SYNTAX_PROTO3) {
+  if (!options.is_descriptor &&
+      FileDescriptorLegacy(file).syntax() !=
+          FileDescriptorLegacy::Syntax::SYNTAX_PROTO3) {
     *error =
         "Can only generate PHP code for proto3 .proto files.\n"
         "Please add 'syntax = \"proto3\";' to the top of your .proto file.\n";
