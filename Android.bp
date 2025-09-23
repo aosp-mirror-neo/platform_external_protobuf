@@ -224,17 +224,11 @@ cc_defaults {
         host: {
             rtti: true,
         },
-
-        // This suffix for vendor and product must be updated
-        // when a new version is imported. It should match
-        // the "cpp" entry in version.json.
-        vendor: {
-            suffix: "-4.25.8",
-        },
-        product: {
-            suffix: "-4.25.8",
-        },
     },
+
+    // This suffix must be updated when a new version is imported.
+    // It should match the "cpp" entry in version.json.
+    suffix: "-4.25.8",
 }
 
 // Defaults for the lite library when thread-local storage is enabled.
