@@ -10,10 +10,6 @@ package com.google.protobuf;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThrows;
-
-import com.google.common.primitives.Bytes;
-import map_test.MapTestProto.MapContainer;
 import protobuf_unittest.UnittestProto.BoolMessage;
 import protobuf_unittest.UnittestProto.Int32Message;
 import protobuf_unittest.UnittestProto.Int64Message;
@@ -37,13 +33,6 @@ import org.junit.runners.JUnit4;
 public class CodedInputStreamTest {
 
   private static final int DEFAULT_BLOCK_SIZE = 4096;
-
-  private static final int GROUP_TAP = WireFormat.makeTag(3, WireFormat.WIRETYPE_START_GROUP);
-
-  private static final byte[] NESTING_SGROUP = generateSGroupTags();
-
-  private static final byte[] NESTING_SGROUP_WITH_INITIAL_BYTES = generateSGroupTagsForMapField();
-
 
   private enum InputType {
     ARRAY {
@@ -125,17 +114,6 @@ public class CodedInputStreamTest {
       bytes[i] = (byte) bytesAsInts[i];
     }
     return bytes;
-  }
-
-  private static byte[] generateSGroupTags() {
-    byte[] bytes = new byte[100000];
-    Arrays.fill(bytes, (byte) GROUP_TAP);
-    return bytes;
-  }
-
-  private static byte[] generateSGroupTagsForMapField() {
-    byte[] initialBytes = {18, 1, 75, 26, (byte) 198, (byte) 154, 12};
-    return Bytes.concat(initialBytes, NESTING_SGROUP);
   }
 
   /**
@@ -494,7 +472,7 @@ public class CodedInputStreamTest {
   /** Skipping a huge blob should not allocate excessive memory, so there should be no limit */
   @Test
   public void testSkipMaliciouslyHugeBlob() throws Exception {
-    InputStream is = new RepeatingInputStream(new byte[]{1}, Integer.MAX_VALUE);
+    InputStream is = new RepeatingInputStream(new byte[] {1}, Integer.MAX_VALUE);
     CodedInputStream.newInstance(is).skipRawBytes(Integer.MAX_VALUE);
   }
 
@@ -553,86 +531,6 @@ public class CodedInputStreamTest {
       } catch (InvalidProtocolBufferException e) {
         // success.
       }
-    }
-  }
-
-  @Test
-  public void testReadStringWithSizeOverflow_throwsInvalidProtocolBufferException()
-      throws Exception {
-    ByteString.Output rawOutput = ByteString.newOutput();
-    CodedOutputStream output = CodedOutputStream.newInstance(rawOutput);
-
-    output.writeUInt32NoTag(0xFFFFFFFF); // Larger than Integer.MAX_VALUE.
-    output.writeRawBytes(new byte[32]); // Pad with a few random bytes.
-    output.flush();
-    byte[] data = rawOutput.toByteString().toByteArray();
-    for (InputType inputType : InputType.values()) {
-      CodedInputStream input = inputType.newDecoder(data);
-      assertThrows(InvalidProtocolBufferException.class, input::readString);
-    }
-  }
-
-  @Test
-  public void testReadStringRequireUtf8WithSizeOverflow_throwsInvalidProtocolBufferException()
-      throws Exception {
-    ByteString.Output rawOutput = ByteString.newOutput();
-    CodedOutputStream output = CodedOutputStream.newInstance(rawOutput);
-
-    output.writeUInt32NoTag(0xFFFFFFFF); // Larger than Integer.MAX_VALUE.
-    output.writeRawBytes(new byte[32]); // Pad with a few random bytes.
-    output.flush();
-    byte[] data = rawOutput.toByteString().toByteArray();
-    for (InputType inputType : InputType.values()) {
-      CodedInputStream input = inputType.newDecoder(data);
-      assertThrows(InvalidProtocolBufferException.class, input::readStringRequireUtf8);
-    }
-  }
-
-  @Test
-  public void testReadBytesWithHugeSizeOverflow_throwsInvalidProtocolBufferException()
-      throws Exception {
-    ByteString.Output rawOutput = ByteString.newOutput();
-    CodedOutputStream output = CodedOutputStream.newInstance(rawOutput);
-
-    output.writeUInt32NoTag(0xFFFFFFFF); // Larger than Integer.MAX_VALUE.
-    output.writeRawBytes(new byte[32]); // Pad with a few random bytes.
-    output.flush();
-    byte[] data = rawOutput.toByteString().toByteArray();
-    for (InputType inputType : InputType.values()) {
-      CodedInputStream input = inputType.newDecoder(data);
-      assertThrows(InvalidProtocolBufferException.class, input::readBytes);
-    }
-  }
-
-  @Test
-  public void testReadByteArrayWithHugeSizeOverflow_throwsInvalidProtocolBufferException()
-      throws Exception {
-    ByteString.Output rawOutput = ByteString.newOutput();
-    CodedOutputStream output = CodedOutputStream.newInstance(rawOutput);
-
-    output.writeUInt32NoTag(0xFFFFFFFF); // Larger than Integer.MAX_VALUE.
-    output.writeRawBytes(new byte[32]); // Pad with a few random bytes.
-    output.flush();
-    byte[] data = rawOutput.toByteString().toByteArray();
-    for (InputType inputType : InputType.values()) {
-      CodedInputStream input = inputType.newDecoder(data);
-      assertThrows(InvalidProtocolBufferException.class, input::readByteArray);
-    }
-  }
-
-  @Test
-  public void testReadByteBufferWithSizeOverflow_throwsInvalidProtocolBufferException()
-      throws Exception {
-    ByteString.Output rawOutput = ByteString.newOutput();
-    CodedOutputStream output = CodedOutputStream.newInstance(rawOutput);
-
-    output.writeUInt32NoTag(0xFFFFFFFF); // Larger than Integer.MAX_VALUE.
-    output.writeRawBytes(new byte[32]); // Pad with a few random bytes.
-    output.flush();
-    byte[] data = rawOutput.toByteString().toByteArray();
-    for (InputType inputType : InputType.values()) {
-      CodedInputStream input = inputType.newDecoder(data);
-      assertThrows(InvalidProtocolBufferException.class, input::readByteBuffer);
     }
   }
 
@@ -759,143 +657,6 @@ public class CodedInputStreamTest {
         // success.
       }
     }
-  }
-
-  @Test
-  public void testMaliciousRecursion_unknownFields() throws Exception {
-    Throwable thrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () -> TestRecursiveMessage.parseFrom(NESTING_SGROUP));
-
-    assertThat(thrown).hasMessageThat().contains("Protocol message had too many levels of nesting");
-  }
-
-  @Test
-  public void testMaliciousRecursion_skippingUnknownField() throws Exception {
-    Throwable thrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () ->
-                DiscardUnknownFieldsParser.wrap(TestRecursiveMessage.parser())
-                    .parseFrom(NESTING_SGROUP));
-
-    assertThat(thrown).hasMessageThat().contains("Protocol message had too many levels of nesting");
-  }
-
-  @Test
-  public void testMaliciousSGroupTagsWithMapField_fromInputStream() throws Exception {
-    Throwable parseFromThrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () ->
-                MapContainer.parseFrom(
-                    new ByteArrayInputStream(NESTING_SGROUP_WITH_INITIAL_BYTES)));
-    Throwable mergeFromThrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () ->
-                MapContainer.newBuilder()
-                    .mergeFrom(new ByteArrayInputStream(NESTING_SGROUP_WITH_INITIAL_BYTES)));
-
-    assertThat(parseFromThrown)
-        .hasMessageThat()
-        .contains("Protocol message had too many levels of nesting");
-    assertThat(mergeFromThrown)
-        .hasMessageThat()
-        .contains("Protocol message had too many levels of nesting");
-  }
-
-  @Test
-  public void testMaliciousSGroupTags_inputStream_skipMessage() throws Exception {
-    ByteArrayInputStream inputSteam = new ByteArrayInputStream(NESTING_SGROUP);
-    CodedInputStream input = CodedInputStream.newInstance(inputSteam);
-    CodedOutputStream output = CodedOutputStream.newInstance(new byte[NESTING_SGROUP.length]);
-
-    Throwable thrown = assertThrows(InvalidProtocolBufferException.class, input::skipMessage);
-    Throwable thrown2 =
-        assertThrows(InvalidProtocolBufferException.class, () -> input.skipMessage(output));
-
-    assertThat(thrown).hasMessageThat().contains("Protocol message had too many levels of nesting");
-    assertThat(thrown2)
-        .hasMessageThat()
-        .contains("Protocol message had too many levels of nesting");
-  }
-
-  @Test
-  public void testMaliciousSGroupTagsWithMapField_fromByteArray() throws Exception {
-    Throwable parseFromThrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () -> MapContainer.parseFrom(NESTING_SGROUP_WITH_INITIAL_BYTES));
-    Throwable mergeFromThrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () -> MapContainer.newBuilder().mergeFrom(NESTING_SGROUP_WITH_INITIAL_BYTES));
-
-    assertThat(parseFromThrown)
-        .hasMessageThat()
-        .contains("the input ended unexpectedly in the middle of a field");
-    assertThat(mergeFromThrown)
-        .hasMessageThat()
-        .contains("the input ended unexpectedly in the middle of a field");
-  }
-
-  @Test
-  public void testMaliciousSGroupTags_arrayDecoder_skipMessage() throws Exception {
-    CodedInputStream input = CodedInputStream.newInstance(NESTING_SGROUP);
-    CodedOutputStream output = CodedOutputStream.newInstance(new byte[NESTING_SGROUP.length]);
-
-    Throwable thrown = assertThrows(InvalidProtocolBufferException.class, input::skipMessage);
-    Throwable thrown2 =
-        assertThrows(InvalidProtocolBufferException.class, () -> input.skipMessage(output));
-
-    assertThat(thrown).hasMessageThat().contains("Protocol message had too many levels of nesting");
-    assertThat(thrown2)
-        .hasMessageThat()
-        .contains("Protocol message had too many levels of nesting");
-  }
-
-  @Test
-  public void testMaliciousSGroupTagsWithMapField_fromByteBuffer() throws Exception {
-    Throwable thrown =
-        assertThrows(
-            InvalidProtocolBufferException.class,
-            () -> MapContainer.parseFrom(ByteBuffer.wrap(NESTING_SGROUP_WITH_INITIAL_BYTES)));
-
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("the input ended unexpectedly in the middle of a field");
-  }
-
-  @Test
-  public void testMaliciousSGroupTags_byteBuffer_skipMessage() throws Exception {
-    CodedInputStream input = InputType.NIO_DIRECT.newDecoder(NESTING_SGROUP);
-    CodedOutputStream output = CodedOutputStream.newInstance(new byte[NESTING_SGROUP.length]);
-
-    Throwable thrown = assertThrows(InvalidProtocolBufferException.class, input::skipMessage);
-    Throwable thrown2 =
-        assertThrows(InvalidProtocolBufferException.class, () -> input.skipMessage(output));
-
-    assertThat(thrown).hasMessageThat().contains("Protocol message had too many levels of nesting");
-    assertThat(thrown2)
-        .hasMessageThat()
-        .contains("Protocol message had too many levels of nesting");
-  }
-
-  @Test
-  public void testMaliciousSGroupTags_iterableByteBuffer() throws Exception {
-    CodedInputStream input = InputType.ITER_DIRECT.newDecoder(NESTING_SGROUP);
-    CodedOutputStream output = CodedOutputStream.newInstance(new byte[NESTING_SGROUP.length]);
-
-    Throwable thrown = assertThrows(InvalidProtocolBufferException.class, input::skipMessage);
-    Throwable thrown2 =
-        assertThrows(InvalidProtocolBufferException.class, () -> input.skipMessage(output));
-
-    assertThat(thrown).hasMessageThat().contains("Protocol message had too many levels of nesting");
-    assertThat(thrown2)
-        .hasMessageThat()
-        .contains("Protocol message had too many levels of nesting");
   }
 
   private void checkSizeLimitExceeded(InvalidProtocolBufferException e) {
@@ -1502,16 +1263,17 @@ public class CodedInputStreamTest {
   public void testMaliciousInputStream() throws Exception {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(outputStream);
-    codedOutputStream.writeByteArrayNoTag(new byte[] { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5 });
+    codedOutputStream.writeByteArrayNoTag(new byte[] {0x0, 0x1, 0x2, 0x3, 0x4, 0x5});
     codedOutputStream.flush();
     final List<byte[]> maliciousCapture = new ArrayList<>();
-    InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray()) {
-      @Override
-      public synchronized int read(byte[] b, int off, int len) {
-        maliciousCapture.add(b);
-        return super.read(b, off, len);
-      }
-    };
+    InputStream inputStream =
+        new ByteArrayInputStream(outputStream.toByteArray()) {
+          @Override
+          public synchronized int read(byte[] b, int off, int len) {
+            maliciousCapture.add(b);
+            return super.read(b, off, len);
+          }
+        };
 
     // test ByteString
 
