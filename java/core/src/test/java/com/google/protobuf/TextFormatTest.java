@@ -11,6 +11,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.protobuf.TestUtil.TEST_REQUIRED_INITIALIZED;
 import static com.google.protobuf.TestUtil.TEST_REQUIRED_UNINITIALIZED;
+import static protobuf_unittest.UnittestProto.optionalInt32Extension;
 import static org.junit.Assert.assertThrows;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
@@ -58,6 +59,11 @@ public class TextFormatTest {
   private static final String ESCAPE_TEST_STRING_ESCAPED =
       "\\\"A string with \\' characters \\n and \\r newlines "
           + "and \\t tabs and \\001 slashes \\\\";
+
+  private static final String ALL_FIELDS_SET_TEXT =
+      TestUtil.readTextFromFile("text_format_unittest_data_oneof_implemented.txt");
+  private static final String ALL_EXTENSIONS_SET_TEXT =
+      TestUtil.readTextFromFile("text_format_unittest_extensions_data.txt");
 
   private static final String EXOTIC_TEXT =
       ""
@@ -134,7 +140,12 @@ public class TextFormatTest {
   public void testPrintMessage() throws Exception {
     String javaText = TextFormat.printer().printToString(TestUtil.getAllSet());
 
-    assertThat(javaText).isEqualTo(TestUtil.ALL_FIELDS_SET_TEXT);
+    // Java likes to add a trailing ".0" to floats and doubles.  C printf
+    // (with %g format) does not.  Our golden files are used for both
+    // C++ and Java TextFormat classes, so we need to conform.
+    javaText = javaText.replace(".0\n", "\n");
+
+    assertThat(javaText).isEqualTo(ALL_FIELDS_SET_TEXT);
   }
 
   @Test
@@ -149,7 +160,12 @@ public class TextFormatTest {
   public void testPrintMessageBuilder() throws Exception {
     String javaText = TextFormat.printer().printToString(TestUtil.getAllSetBuilder());
 
-    assertThat(javaText).isEqualTo(TestUtil.ALL_FIELDS_SET_TEXT);
+    // Java likes to add a trailing ".0" to floats and doubles.  C printf
+    // (with %g format) does not.  Our golden files are used for both
+    // C++ and Java TextFormat classes, so we need to conform.
+    javaText = javaText.replace(".0\n", "\n");
+
+    assertThat(javaText).isEqualTo(ALL_FIELDS_SET_TEXT);
   }
 
   /** Print TestAllExtensions and compare with golden file. */
@@ -157,7 +173,12 @@ public class TextFormatTest {
   public void testPrintExtensions() throws Exception {
     String javaText = TextFormat.printer().printToString(TestUtil.getAllExtensionsSet());
 
-    assertThat(javaText).isEqualTo(TestUtil.ALL_EXTENSIONS_SET_TEXT);
+    // Java likes to add a trailing ".0" to floats and doubles.  C printf
+    // (with %g format) does not.  Our golden files are used for both
+    // C++ and Java TextFormat classes, so we need to conform.
+    javaText = javaText.replace(".0\n", "\n");
+
+    assertThat(javaText).isEqualTo(ALL_EXTENSIONS_SET_TEXT);
   }
 
   // Creates an example unknown field set.
@@ -333,13 +354,13 @@ public class TextFormatTest {
   @Test
   public void testMerge() throws Exception {
     TestAllTypes.Builder builder = TestAllTypes.newBuilder();
-    TextFormat.merge(TestUtil.ALL_FIELDS_SET_TEXT, builder);
+    TextFormat.merge(ALL_FIELDS_SET_TEXT, builder);
     TestUtil.assertAllFieldsSet(builder.build());
   }
 
   @Test
   public void testParse() throws Exception {
-    TestUtil.assertAllFieldsSet(TextFormat.parse(TestUtil.ALL_FIELDS_SET_TEXT, TestAllTypes.class));
+    TestUtil.assertAllFieldsSet(TextFormat.parse(ALL_FIELDS_SET_TEXT, TestAllTypes.class));
   }
 
   @Test
@@ -379,15 +400,14 @@ public class TextFormatTest {
   @Test
   public void testMergeReader() throws Exception {
     TestAllTypes.Builder builder = TestAllTypes.newBuilder();
-    TextFormat.merge(new StringReader(TestUtil.ALL_FIELDS_SET_TEXT), builder);
+    TextFormat.merge(new StringReader(ALL_FIELDS_SET_TEXT), builder);
     TestUtil.assertAllFieldsSet(builder.build());
   }
 
   @Test
   public void testMergeExtensions() throws Exception {
     TestAllExtensions.Builder builder = TestAllExtensions.newBuilder();
-    TextFormat.merge(
-        TestUtil.ALL_EXTENSIONS_SET_TEXT, TestUtil.getFullExtensionRegistry(), builder);
+    TextFormat.merge(ALL_EXTENSIONS_SET_TEXT, TestUtil.getFullExtensionRegistry(), builder);
     TestUtil.assertAllExtensionsSet(builder.build());
   }
 
@@ -395,9 +415,7 @@ public class TextFormatTest {
   public void testParseExtensions() throws Exception {
     TestUtil.assertAllExtensionsSet(
         TextFormat.parse(
-            TestUtil.ALL_EXTENSIONS_SET_TEXT,
-            TestUtil.getFullExtensionRegistry(),
-            TestAllExtensions.class));
+            ALL_EXTENSIONS_SET_TEXT, TestUtil.getFullExtensionRegistry(), TestAllExtensions.class));
   }
 
   @Test
@@ -602,6 +620,83 @@ public class TextFormatTest {
     String expected =
         "[type.googleapis.com/protobuf_unittest.TestAllTypes] {\n"
             + "  optional_int32: 12345\n"
+            + "}\n";
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void testPrintAny_anyWithDynamicMessageContainingExtensionTreatedAsUnknown()
+      throws Exception {
+    Descriptor descriptor =
+        createDescriptorForAny(
+            FieldDescriptorProto.newBuilder()
+                .setName("type_url")
+                .setNumber(1)
+                .setLabel(FieldDescriptorProto.Label.LABEL_OPTIONAL)
+                .setType(FieldDescriptorProto.Type.TYPE_STRING)
+                .build(),
+            FieldDescriptorProto.newBuilder()
+                .setName("value")
+                .setNumber(2)
+                .setLabel(FieldDescriptorProto.Label.LABEL_OPTIONAL)
+                .setType(FieldDescriptorProto.Type.TYPE_BYTES)
+                .build());
+    DynamicMessage testAny =
+        DynamicMessage.newBuilder(descriptor)
+            .setField(
+                descriptor.findFieldByNumber(1),
+                "type.googleapis.com/" + TestAllExtensions.getDescriptor().getFullName())
+            .setField(
+                descriptor.findFieldByNumber(2),
+                TestAllExtensions.newBuilder()
+                    .setExtension(optionalInt32Extension, 12345)
+                    .build()
+                    .toByteString())
+            .build();
+    String actual =
+        TextFormat.printer()
+            .usingTypeRegistry(TypeRegistry.newBuilder().add(TestAllTypes.getDescriptor()).build())
+            .printToString(testAny);
+    String expected = "[type.googleapis.com/protobuf_unittest.TestAllExtensions] {\n  1: 12345\n}\n";
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void testPrintAny_anyWithDynamicMessageContainingExtensionWithRegistry() throws Exception {
+    Descriptor descriptor =
+        createDescriptorForAny(
+            FieldDescriptorProto.newBuilder()
+                .setName("type_url")
+                .setNumber(1)
+                .setLabel(FieldDescriptorProto.Label.LABEL_OPTIONAL)
+                .setType(FieldDescriptorProto.Type.TYPE_STRING)
+                .build(),
+            FieldDescriptorProto.newBuilder()
+                .setName("value")
+                .setNumber(2)
+                .setLabel(FieldDescriptorProto.Label.LABEL_OPTIONAL)
+                .setType(FieldDescriptorProto.Type.TYPE_BYTES)
+                .build());
+    DynamicMessage testAny =
+        DynamicMessage.newBuilder(descriptor)
+            .setField(
+                descriptor.findFieldByNumber(1),
+                "type.googleapis.com/" + TestAllExtensions.getDescriptor().getFullName())
+            .setField(
+                descriptor.findFieldByNumber(2),
+                TestAllExtensions.newBuilder()
+                    .setExtension(optionalInt32Extension, 12345)
+                    .build()
+                    .toByteString())
+            .build();
+    String actual =
+        TextFormat.printer()
+            .usingTypeRegistry(TypeRegistry.newBuilder().add(TestAllTypes.getDescriptor()).build())
+            .usingExtensionRegistry(TestUtil.getFullExtensionRegistry())
+            .printToString(testAny);
+    String expected =
+        "[type.googleapis.com/protobuf_unittest.TestAllExtensions] {\n"
+            + "  [protobuf_unittest.optional_int32_extension]: 12345\n"
             + "}\n";
     assertThat(actual).isEqualTo(expected);
   }

@@ -28,8 +28,6 @@
 #include <fstream>
 #include <sstream>
 
-#include "google/protobuf/testing/file.h"
-#include "google/protobuf/testing/file.h"
 #include "google/protobuf/descriptor.pb.h"
 #include <gmock/gmock.h>
 #include "google/protobuf/testing/googletest.h"
@@ -103,6 +101,24 @@ TEST(MESSAGE_TEST_NAME, SerializeHelpers) {
 
 }
 
+TEST(MESSAGE_TEST_NAME, RoundTrip) {
+  UNITTEST::TestAllTypes message;
+  TestUtil::SetAllFields(&message);
+  TestUtil::ExpectAllFieldsSet(message);
+
+  UNITTEST::TestAllTypes copied, merged, parsed;
+  copied = message;
+  TestUtil::ExpectAllFieldsSet(copied);
+
+  merged.MergeFrom(message);
+  TestUtil::ExpectAllFieldsSet(merged);
+
+  std::string data;
+  ASSERT_TRUE(message.SerializeToString(&data));
+  ASSERT_TRUE(parsed.ParseFromString(data));
+  TestUtil::ExpectAllFieldsSet(parsed);
+}
+
 TEST(MESSAGE_TEST_NAME, SerializeToBrokenOstream) {
   std::ofstream out;
   UNITTEST::TestAllTypes message;
@@ -112,12 +128,8 @@ TEST(MESSAGE_TEST_NAME, SerializeToBrokenOstream) {
 }
 
 TEST(MESSAGE_TEST_NAME, ParseFromFileDescriptor) {
-  std::string filename = absl::StrCat(TestTempDir(), "/golden_message");
-  UNITTEST::TestAllTypes expected_message;
-  TestUtil::SetAllFields(&expected_message);
-  ABSL_CHECK_OK(File::SetContents(
-      filename, expected_message.SerializeAsString(), true));
-
+  std::string filename =
+      TestUtil::GetTestDataPath("google/protobuf/testdata/golden_message");
   int file = open(filename.c_str(), O_RDONLY | O_BINARY);
   ASSERT_GE(file, 0);
 
@@ -129,12 +141,8 @@ TEST(MESSAGE_TEST_NAME, ParseFromFileDescriptor) {
 }
 
 TEST(MESSAGE_TEST_NAME, ParsePackedFromFileDescriptor) {
-  std::string filename = absl::StrCat(TestTempDir(), "/golden_message");
-  UNITTEST::TestPackedTypes expected_message;
-  TestUtil::SetPackedFields(&expected_message);
-  ABSL_CHECK_OK(File::SetContents(
-      filename, expected_message.SerializeAsString(), true));
-
+  std::string filename = TestUtil::GetTestDataPath(
+      "google/protobuf/testdata/golden_packed_fields_message");
   int file = open(filename.c_str(), O_RDONLY | O_BINARY);
   ASSERT_GE(file, 0);
 
@@ -1947,9 +1955,10 @@ TEST(MESSAGE_TEST_NAME, TestRegressionInlinedStringAuxIdxMismatchOnFastParser) {
   if (table != nullptr &&
       table->fast_entry(1)->target() == internal::TcParser::FastSiS1) {
     // optional string str1 = 1;
+    // The aux_idx points to the inlined_string_idx and not the actual aux_idx.
     EXPECT_EQ(table->fast_entry(1)->bits.aux_idx(), 1);
     // optional InlinedStringIdxRegressionProto sub = 2;
-    EXPECT_EQ(table->fast_entry(2)->bits.aux_idx(), 2);
+    EXPECT_EQ(table->fast_entry(2)->bits.aux_idx(), 1);
     // optional string str2 = 3;
     // The aux_idx points to the inlined_string_idx and not the actual aux_idx.
     EXPECT_EQ(table->fast_entry(3)->bits.aux_idx(), 2);

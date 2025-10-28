@@ -6,16 +6,12 @@ require_once('test_util.php');
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\MapField;
 use Google\Protobuf\Internal\GPBType;
-use Bar\TestLegacyMessage;
-use Bar\TestLegacyMessage_NestedEnum;
-use Bar\TestLegacyMessage_NestedMessage;
 use Foo\Test32Fields;
 use Foo\TestEnum;
 use Foo\TestIncludeNamespaceMessage;
 use Foo\TestIncludePrefixMessage;
 use Foo\TestMessage;
 use Foo\TestMessage\Sub;
-use Foo\TestMessage_Sub;
 use Foo\TestMessage\NestedEnum;
 use Foo\TestReverseFieldOrder;
 use Foo\testLowerCaseMessage;
@@ -102,92 +98,6 @@ class GeneratedClassTest extends TestBase
         restore_error_handler();
 
         $this->assertSame(4, $deprecationCount);
-    }
-
-    public function testDeprecatedFieldGetterDoesNotThrowWarning()
-    {
-        // temporarily change error handler to capture the deprecated errors
-        $deprecationCount = 0;
-        set_error_handler(function ($errno, $errstr) use (&$deprecationCount) {
-            if (false !== strpos($errstr, ' is deprecated.')) {
-                $deprecationCount++;
-            }
-        }, E_USER_DEPRECATED);
-
-        // does not throw warning
-        $message = new TestMessage();
-        $message->getDeprecatedInt32();
-        $message->getDeprecatedOptionalInt32();
-        $message->getDeprecatedInt32ValueUnwrapped(); // wrapped field
-        $message->getDeprecatedInt32Value(); // wrapped field
-        $message->getDeprecatedOneofInt32(); // oneof field
-        $message->getDeprecatedOneof(); // oneof field
-        $message->getDeprecatedRepeatedInt32(); // repeated field
-        $message->getDeprecatedMapInt32Int32(); // map field
-        $message->getDeprecatedAny(); // any field
-        $message->getDeprecatedMessage(); // message field
-        $message->getDeprecatedEnum(); // enum field
-
-        restore_error_handler();
-
-        $this->assertEquals(0, $deprecationCount);
-    }
-
-    public function testDeprecatedFieldGetterThrowsWarningWithValue()
-    {
-        $message = new TestMessage([
-            'deprecated_int32' => 1,
-            'deprecated_optional_int32' => 1,
-            'deprecated_int32_value' => new \Google\Protobuf\Int32Value(['value' => 1]),
-            'deprecated_oneof_int32' => 1,
-            'deprecated_repeated_int32' => [1],
-            'deprecated_map_int32_int32' => [1 => 1],
-            'deprecated_any' => new \Google\Protobuf\Any(['type_url' => 'foo', 'value' => 'bar']),
-            'deprecated_message' => new TestMessage(),
-            'deprecated_enum' => 1,
-        ]);
-
-        // temporarily change error handler to capture the deprecated errors
-        $deprecationCount = 0;
-        set_error_handler(function ($errno, $errstr) use (&$deprecationCount) {
-            if (false !== strpos($errstr, ' is deprecated.')) {
-                $deprecationCount++;
-            }
-        }, E_USER_DEPRECATED);
-
-        $message->getDeprecatedInt32();
-        $message->getDeprecatedOptionalInt32();
-        $message->getDeprecatedInt32ValueUnwrapped(); // wrapped field unwrapped
-        $message->getDeprecatedInt32Value(); // wrapped field
-        $message->getDeprecatedOneofInt32(); // oneof field
-        $message->getDeprecatedRepeatedInt32(); // repeated field
-        $message->getDeprecatedMapInt32Int32(); // map field
-        $message->getDeprecatedAny(); // any field
-        $message->getDeprecatedMessage(); // message field
-        $message->getDeprecatedEnum(); // enum field
-
-        // oneof field (should never warn)
-        $message->getDeprecatedOneof();
-
-        restore_error_handler();
-
-        $this->assertEquals(10, $deprecationCount);
-    }
-
-    public function testDeprecatedFieldWarningsOnSerialize()
-    {
-        set_error_handler(function ($errno, $errstr) {
-            if (false !== strpos($errstr, ' is deprecated.')) {
-                throw new \Exception($errstr);
-            }
-        }, E_USER_DEPRECATED);
-
-        $message = new TestMessage();
-        $message->serializeToJsonString();
-
-        restore_error_handler();
-
-        $this->assertTrue(true, 'No deprecation warning on serialize');
     }
 
     #########################################################
@@ -408,37 +318,6 @@ class GeneratedClassTest extends TestBase
         $this->assertTrue(true);
     }
 
-    public function testLegacyNestedEnum()
-    {
-        $m = new TestMessage();
-        $m->setOptionalNestedEnum(\Foo\TestMessage_NestedEnum::ZERO);
-        $this->assertTrue(true);
-    }
-
-    public function testLegacyTypehintWithNestedEnums()
-    {
-        $this->legacyEnum(new TestLegacyMessage\NestedEnum);
-    }
-
-    public function testLegacyReadOnlyMessage()
-    {
-        $this->assertTrue(class_exists('\Upper\READONLY'));
-        $this->assertTrue(class_exists('\Lower\readonly'));
-        $this->assertTrue(class_exists('\Php\Test\TestNamespace\PBEmpty\ReadOnly'));
-    }
-
-    public function testLegacyReadOnlyEnum()
-    {
-        $this->assertTrue(class_exists('\Upper_enum\READONLY'));
-        $this->assertTrue(class_exists('\Lower_enum\readonly'));
-    }
-
-    private function legacyEnum(TestLegacyMessage_NestedEnum $enum)
-    {
-        // If we made it here without a PHP Fatal error, the typehint worked
-        $this->assertTrue(true);
-    }
-
     #########################################################
     # Test float field.
     #########################################################
@@ -536,6 +415,19 @@ class GeneratedClassTest extends TestBase
     }
 
     #########################################################
+    # Test invalid UTF-8
+    #########################################################
+
+    public function testInvalidUtf8StringFails()
+    {
+        $m = new TestMessage();
+
+        // Invalid UTF-8 is rejected.
+        $this->expectException(Exception::class);
+        $m->setOptionalString("\xff");
+    }
+
+    #########################################################
     # Test bytes field.
     #########################################################
 
@@ -560,13 +452,12 @@ class GeneratedClassTest extends TestBase
         $this->assertSame('1', $m->getOptionalBytes());
     }
 
-      public function testBytesFieldInvalidUTF8Success()
-      {
-          $m = new TestMessage();
-          $hex = hex2bin("ff");
-          $m->setOptionalBytes($hex);
-          $this->assertTrue(true);
-      }
+    public function testBytesFieldInvalidUTF8Success()
+    {
+        $m = new TestMessage();
+        $m->setOptionalBytes("\xff");
+        $this->assertSame("\xff", $m->getOptionalBytes());
+    }
 
     #########################################################
     # Test message field.
@@ -588,31 +479,6 @@ class GeneratedClassTest extends TestBase
         $m->setOptionalMessage($null);
         $this->assertNull($m->getOptionalMessage());
         $this->assertFalse($m->hasOptionalMessage());
-    }
-
-    public function testLegacyMessageField()
-    {
-        $m = new TestMessage();
-
-        $sub_m = new TestMessage_Sub();
-        $sub_m->setA(1);
-        $m->setOptionalMessage($sub_m);
-        $this->assertSame(1, $m->getOptionalMessage()->getA());
-
-        $null = null;
-        $m->setOptionalMessage($null);
-        $this->assertNull($m->getOptionalMessage());
-    }
-
-    public function testLegacyTypehintWithNestedMessages()
-    {
-        $this->legacyMessage(new TestLegacyMessage\NestedMessage);
-    }
-
-    private function legacyMessage(TestLegacyMessage_NestedMessage $sub)
-    {
-        // If we made it here without a PHP Fatal error, the typehint worked
-        $this->assertTrue(true);
     }
 
     #########################################################
