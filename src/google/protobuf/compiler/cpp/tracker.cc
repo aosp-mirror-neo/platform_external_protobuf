@@ -214,8 +214,7 @@ Getters RepeatedFieldGetters(const FieldDescriptor* field,
 
 Getters StringFieldGetters(const FieldDescriptor* field, const Options& opts) {
   std::string member = FieldMemberName(field, ShouldSplit(field, opts));
-  bool is_std_string =
-      field->cpp_string_type() == FieldDescriptor::CppStringType::kString;
+  bool is_std_string = field->options().ctype() == FieldOptions::STRING;
 
   Getters getters;
   if (is_std_string && !field->default_value_string().empty()) {
@@ -235,8 +234,7 @@ Getters StringOneofGetters(const FieldDescriptor* field,
   ABSL_CHECK(oneof != nullptr);
 
   std::string member = FieldMemberName(field, ShouldSplit(field, opts));
-  bool is_std_string =
-      field->cpp_string_type() == FieldDescriptor::CppStringType::kString;
+  bool is_std_string = field->options().ctype() == FieldOptions::STRING;
 
   std::string field_ptr = member;
   if (is_std_string) {
@@ -253,8 +251,8 @@ Getters StringOneofGetters(const FieldDescriptor* field,
   }
 
   Getters getters;
-  if (field->default_value_string().empty()
-  ) {
+  if (field->default_value_string().empty() ||
+      field->options().ctype() == FieldOptions::STRING_PIECE) {
     getters.base = absl::Substitute("$0 ? $1 : nullptr", has, field_ptr);
   } else {
     getters.base =

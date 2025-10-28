@@ -47,7 +47,6 @@
 #include "google/protobuf/compiler/subprocess.h"
 #include "google/protobuf/io/io_win32.h"
 #include "google/protobuf/test_textproto.h"
-#include "google/protobuf/test_util.h"
 #include "google/protobuf/test_util2.h"
 #include "google/protobuf/unittest.pb.h"
 #include "google/protobuf/unittest_custom_options.pb.h"
@@ -1355,16 +1354,14 @@ TEST_F(CommandLineInterfaceTest, AllowServicesHasService) {
   ExpectGenerated("test_generator", "", "foo.proto", "Foo");
 }
 
-TEST_F(CommandLineInterfaceTest, EditionsAreNotAllowed) {
+TEST_F(CommandLineInterfaceTest, NonExperimentalEditions) {
   CreateTempFile("foo.proto",
                  "edition = \"2023\";\n"
                  "message FooRequest {}\n");
 
   Run("protocol_compiler --proto_path=$tmpdir --test_out=$tmpdir foo.proto");
 
-  ExpectErrorSubstring(
-      "This file uses editions, but --experimental_editions has not been "
-      "enabled.");
+  ExpectErrorSubstring("--experimental_editions has not been enabled");
 }
 
 TEST_F(CommandLineInterfaceTest, EditionsFlagExplicitTrue) {
@@ -1531,6 +1528,74 @@ TEST_F(CommandLineInterfaceTest, Plugin_InvalidFeatureExtensionError) {
   ExpectErrorSubstring(
       "error generating feature defaults: Unknown extension of "
       "google.protobuf.FeatureSet");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_DeprecatedEdition) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "2023";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  SetMockGeneratorTestCase("high_minimum");
+  Run("protocol_compiler "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
+  ExpectErrorSubstring(
+      "foo.proto: This file uses editions, but --experimental_editions has not "
+      "been enabled. This syntax is experimental and should be avoided.");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_FutureEdition) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "2023";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  SetMockGeneratorTestCase("low_maximum");
+  Run("protocol_compiler "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
+  ExpectErrorSubstring(
+      "foo.proto: This file uses editions, but --experimental_editions has not "
+      "been enabled. This syntax is experimental and should be avoided.");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_VersionSkewFuture) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "99997_TEST_ONLY";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  SetMockGeneratorTestCase("high_maximum");
+  Run("protocol_compiler "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
+  ExpectErrorSubstring(
+      "foo.proto:2:5: Edition 99997_TEST_ONLY is later than the maximum "
+      "supported edition 2023");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_VersionSkewPast) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "1_TEST_ONLY";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  SetMockGeneratorTestCase("low_minimum");
+  Run("protocol_compiler "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
+  ExpectErrorSubstring(
+      "foo.proto:2:5: Edition 1_TEST_ONLY is earlier than the minimum "
+      "supported edition PROTO2");
 }
 
 TEST_F(CommandLineInterfaceTest, Plugin_MissingFeatureExtensionError) {
@@ -1714,12 +1779,10 @@ TEST_F(CommandLineInterfaceTest, GeneratorNoEditionsSupport) {
                                      "Doesn't support editions",
                                      CodeGenerator::FEATURE_SUPPORTS_EDITIONS);
 
-  Run("protocol_compiler --experimental_editions "
+  Run("protocol_compiler "
       "--proto_path=$tmpdir foo.proto --no_editions_out=$tmpdir");
 
-  ExpectErrorSubstring(
-      "code generator --no_editions_out hasn't been updated to support "
-      "editions");
+  ExpectErrorSubstring("--experimental_editions has not been enabled");
 }
 
 TEST_F(CommandLineInterfaceTest, PluginNoEditionsSupport) {
@@ -1731,11 +1794,10 @@ TEST_F(CommandLineInterfaceTest, PluginNoEditionsSupport) {
   )schema");
 
   SetMockGeneratorTestCase("no_editions");
-  Run("protocol_compiler --experimental_editions "
+  Run("protocol_compiler "
       "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
 
-  ExpectErrorSubstring(
-      "code generator prefix-gen-plug hasn't been updated to support editions");
+  ExpectErrorSubstring("--experimental_editions has not been enabled");
 }
 
 TEST_F(CommandLineInterfaceTest, EditionDefaults) {
@@ -3999,16 +4061,7 @@ class EncodeDecodeTest : public testing::TestWithParam<EncodeDecodeTestMode> {
   std::string unittest_proto_descriptor_set_filename_;
 };
 
-static void WriteGoldenMessage(const std::string& filename) {
-  protobuf_unittest::TestAllTypes message;
-  TestUtil::SetAllFields(&message);
-  std::string golden = message.SerializeAsString();
-  ABSL_CHECK_OK(File::SetContents(filename, golden, true));
-}
-
 TEST_P(EncodeDecodeTest, Encode) {
-  std::string golden_path = absl::StrCat(TestTempDir(), "/golden_message");
-  WriteGoldenMessage(golden_path);
   RedirectStdinFromFile(TestUtil::GetTestDataPath(
       "google/protobuf/"
       "testdata/text_format_unittest_data_oneof_implemented.txt"));
@@ -4018,14 +4071,14 @@ TEST_P(EncodeDecodeTest, Encode) {
   }
   EXPECT_TRUE(
       Run(absl::StrCat(args, " --encode=protobuf_unittest.TestAllTypes")));
-  ExpectStdoutMatchesBinaryFile(golden_path);
+  ExpectStdoutMatchesBinaryFile(TestUtil::GetTestDataPath(
+      "google/protobuf/testdata/golden_message_oneof_implemented"));
   ExpectStderrMatchesText("");
 }
 
 TEST_P(EncodeDecodeTest, Decode) {
-  std::string golden_path = absl::StrCat(TestTempDir(), "/golden_message");
-  WriteGoldenMessage(golden_path);
-  RedirectStdinFromFile(golden_path);
+  RedirectStdinFromFile(TestUtil::GetTestDataPath(
+      "google/protobuf/testdata/golden_message_oneof_implemented"));
   EXPECT_TRUE(
       Run("google/protobuf/unittest.proto"
           " --decode=protobuf_unittest.TestAllTypes"));
@@ -4078,8 +4131,6 @@ TEST_P(EncodeDecodeTest, ProtoParseError) {
 }
 
 TEST_P(EncodeDecodeTest, EncodeDeterministicOutput) {
-  std::string golden_path = absl::StrCat(TestTempDir(), "/golden_message");
-  WriteGoldenMessage(golden_path);
   RedirectStdinFromFile(TestUtil::GetTestDataPath(
       "google/protobuf/"
       "testdata/text_format_unittest_data_oneof_implemented.txt"));
@@ -4089,14 +4140,14 @@ TEST_P(EncodeDecodeTest, EncodeDeterministicOutput) {
   }
   EXPECT_TRUE(Run(absl::StrCat(
       args, " --encode=protobuf_unittest.TestAllTypes --deterministic_output")));
-  ExpectStdoutMatchesBinaryFile(golden_path);
+  ExpectStdoutMatchesBinaryFile(TestUtil::GetTestDataPath(
+      "google/protobuf/testdata/golden_message_oneof_implemented"));
   ExpectStderrMatchesText("");
 }
 
 TEST_P(EncodeDecodeTest, DecodeDeterministicOutput) {
-  std::string golden_path = absl::StrCat(TestTempDir(), "/golden_message");
-  WriteGoldenMessage(golden_path);
-  RedirectStdinFromFile(golden_path);
+  RedirectStdinFromFile(TestUtil::GetTestDataPath(
+      "google/protobuf/testdata/golden_message_oneof_implemented"));
   EXPECT_FALSE(
       Run("google/protobuf/unittest.proto"
           " --decode=protobuf_unittest.TestAllTypes --deterministic_output"));

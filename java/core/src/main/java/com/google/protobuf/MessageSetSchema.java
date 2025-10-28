@@ -278,7 +278,7 @@ final class MessageSetSchema<T> implements Schema<T> {
               reader, extension, extensionRegistry, extensions);
           return true;
         } else {
-          return unknownFieldSchema.mergeOneFieldFrom(unknownFields, reader, /* currentDepth= */ 0);
+          return unknownFieldSchema.mergeOneFieldFrom(unknownFields, reader);
         }
       } else {
         return reader.skipField();
