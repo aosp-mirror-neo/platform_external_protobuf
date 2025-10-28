@@ -1467,6 +1467,7 @@ class Proto2ReflectionTest(unittest.TestCase):
     if api_implementation.Type() != 'python':
       return
 
+    file = descriptor.FileDescriptor(name='foo.proto', package='')
     FieldDescriptor = descriptor.FieldDescriptor
     foo_field_descriptor = FieldDescriptor(
         name='foo_field', full_name='MyProto.foo_field',
@@ -1475,7 +1476,7 @@ class Proto2ReflectionTest(unittest.TestCase):
         label=FieldDescriptor.LABEL_OPTIONAL, default_value=0,
         containing_type=None, message_type=None, enum_type=None,
         is_extension=False, extension_scope=None,
-        options=descriptor_pb2.FieldOptions(),
+        options=descriptor_pb2.FieldOptions(), file=file,
         # pylint: disable=protected-access
         create_key=descriptor._internal_create_key)
     mydescriptor = descriptor.Descriptor(
@@ -1483,6 +1484,7 @@ class Proto2ReflectionTest(unittest.TestCase):
         containing_type=None, nested_types=[], enum_types=[],
         fields=[foo_field_descriptor], extensions=[],
         options=descriptor_pb2.MessageOptions(),
+        file=file,
         # pylint: disable=protected-access
         create_key=descriptor._internal_create_key)
 

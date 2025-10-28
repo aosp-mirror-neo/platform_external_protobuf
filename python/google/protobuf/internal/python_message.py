@@ -779,15 +779,6 @@ def _AddPropertiesForExtensions(descriptor, cls):
     pool = descriptor.file.pool
 
 def _AddStaticMethods(cls):
-  # TODO: This probably needs to be thread-safe(?)
-  def RegisterExtension(field_descriptor):
-    field_descriptor.containing_type = cls.DESCRIPTOR
-    # TODO: Use cls.MESSAGE_FACTORY.pool when available.
-    # pylint: disable=protected-access
-    cls.DESCRIPTOR.file.pool._AddExtensionDescriptor(field_descriptor)
-    _AttachFieldHelpers(cls, field_descriptor)
-  cls.RegisterExtension = staticmethod(RegisterExtension)
-
   def FromString(s):
     message = cls()
     message.MergeFromString(s)
@@ -1136,7 +1127,7 @@ def _AddMergeFromStringMethod(message_descriptor, cls):
   fields_by_tag = cls._fields_by_tag
   message_set_decoders_by_tag = cls._message_set_decoders_by_tag
 
-  def InternalParse(self, buffer, pos, end, current_depth=0):
+  def InternalParse(self, buffer, pos, end):
     """Create a message from serialized bytes.
 
     Args:
@@ -1180,7 +1171,7 @@ def _AddMergeFromStringMethod(message_descriptor, cls):
         # TODO: remove old_pos.
         old_pos = new_pos
         (data, new_pos) = decoder._DecodeUnknownField(
-            buffer, new_pos, wire_type, current_depth)  # pylint: disable=protected-access
+            buffer, new_pos, wire_type)  # pylint: disable=protected-access
         if new_pos == -1:
           return pos
         # pylint: disable=protected-access
@@ -1195,7 +1186,7 @@ def _AddMergeFromStringMethod(message_descriptor, cls):
       else:
         _MaybeAddDecoder(cls, field_des)
         field_decoder = field_des._decoders[is_packed]
-        pos = field_decoder(buffer, new_pos, end, self, field_dict, current_depth)
+        pos = field_decoder(buffer, new_pos, end, self, field_dict)
         if field_des.containing_oneof:
           self._UpdateOneofState(field_des)
     return pos
@@ -1385,15 +1376,9 @@ def _Clear(self):
 
 
 def _UnknownFields(self):
-  warnings.warn(
-      'message.UnknownFields() is deprecated. Please use the add one '
-      'feature unknown_fields.UnknownFieldSet(message) in '
-      'unknown_fields.py instead.'
-  )
-  if self._unknown_field_set is None:  # pylint: disable=protected-access
-    # pylint: disable=protected-access
-    self._unknown_field_set = containers.UnknownFieldSet()
-  return self._unknown_field_set    # pylint: disable=protected-access
+  raise NotImplementedError('Please use the add-on feaure '
+                            'unknown_fields.UnknownFieldSet(message) in '
+                            'unknown_fields.py instead.')
 
 
 def _DiscardUnknownFields(self):
