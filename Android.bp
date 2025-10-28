@@ -839,8 +839,8 @@ java_library_static {
 // =======================================================
 java_library_host {
     name: "libprotobuf-java-full",
+    defaults: ["error_prone_dependency_defaults"],
     visibility: ["//visibility:public"],
-    defaults: ["libprotobuf_errorprone_defaults"],
 
     srcs: [
         ":libprotobuf-internal-protos",
