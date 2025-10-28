@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [25.x]
+        branch: [main, 22.x, 23.x, 24.x, 25.x]
         os: [{ name: Linux, value: ubuntu-latest}]
 
     name: Test staleness ${{ matrix.os.name }} ${{ github.head_ref && 'PR' || matrix.branch }}
@@ -39,8 +39,6 @@ jobs:
         run: echo "MAIN_RUN=1" >> $GITHUB_ENV
 
       - name: Run all staleness tests
-        env:
-          USE_BAZEL_VERSION: '6.3.2'
         # Run all tests if either of the following is true, otherwise simply run the query to make
         # sure it continues to work:
         # 1) If this is not a commit-based run it means it's scheduled or manually dispatched. In
@@ -51,11 +49,15 @@ jobs:
         # In branches where automatic updates work as post-submits, we don't want to run staleness
         # tests along with user changes.  Any stale files will be automatically fixed in a follow-up
         # commit.
-        run: |
-          set -ex
-          echo "Please run ./regenerate_stale_files.sh to regenerate stale files";
-          if [[ -z $COMMIT_TRIGGERED_RUN || -z $MAIN_RUN ]]; then
-            bazel query 'attr(tags, "staleness_test", //...)' | xargs bazel test $BAZEL_FLAGS
-          else
-            bazel query 'attr(tags, "staleness_test", //...)'
-          fi
+        uses: protocolbuffers/protobuf-ci/bazel@v2
+        with:
+          credentials: ${{ secrets.GAR_SERVICE_ACCOUNT }}
+          bazel-cache: staleness
+          bash: >
+            set -ex;
+            echo "Please run ./regenerate_stale_files.sh to regenerate stale files";
+            if [[ -z $COMMIT_TRIGGERED_RUN || -z $MAIN_RUN ]]; then
+            bazel query 'attr(tags, "staleness_test", //...)' | xargs bazel test $BAZEL_FLAGS;
+            else
+            bazel query 'attr(tags, "staleness_test", //...)';
+            fi
