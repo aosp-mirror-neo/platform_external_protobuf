@@ -43,6 +43,8 @@ std::vector<Sub> FieldVars(const FieldDescriptor* field, const Options& opts) {
       // This will eventually be renamed to "field", once the existing "field"
       // variable is replaced with "field_" everywhere.
       {"name", FieldName(field)},
+      // Same as above, but represents internal use.
+      {"name_internal", FieldName(field)},
 
       {"index", field->index()},
       {"number", field->number()},
@@ -76,6 +78,12 @@ std::vector<Sub> FieldVars(const FieldDescriptor* field, const Options& opts) {
       {"ns", Namespace(field, opts)},
       {"tag_size", WireFormat::TagSize(field->number(), field->type())},
       {"deprecated_attr", DeprecatedAttribute(opts, field)},
+      Sub("WeakDescriptorSelfPin",
+          UsingImplicitWeakDescriptor(field->file(), opts)
+              ? absl::StrCat("::", ProtobufNamespace(opts),
+                             "::internal::StrongReference(default_instance());")
+              : "")
+          .WithSuffix(";"),
   };
 
   if (const auto* oneof = field->containing_oneof()) {
@@ -115,6 +123,7 @@ FieldGeneratorBase::FieldGeneratorBase(const FieldDescriptor* descriptor,
       break;
     case FieldDescriptor::CPPTYPE_STRING:
       is_string_ = true;
+      string_type_ = descriptor->options().ctype();
       is_inlined_ = IsStringInlined(descriptor, options);
       is_bytes_ = descriptor->type() == FieldDescriptor::TYPE_BYTES;
       has_default_constexpr_constructor_ = is_repeated_or_map;
@@ -241,18 +250,15 @@ std::unique_ptr<FieldGeneratorBase> MakeGenerator(const FieldDescriptor* field,
     case FieldDescriptor::CPPTYPE_MESSAGE:
       return MakeSinguarMessageGenerator(field, options, scc);
     case FieldDescriptor::CPPTYPE_STRING:
-      switch (field->cpp_string_type()) {
-        case FieldDescriptor::CppStringType::kCord:
-          if (field->type() == FieldDescriptor::TYPE_BYTES) {
-            if (field->real_containing_oneof()) {
-              return MakeOneofCordGenerator(field, options, scc);
-            } else {
-              return MakeSingularCordGenerator(field, options, scc);
-            }
-          }
-          ABSL_FALLTHROUGH_INTENDED;
-        default:
-          return MakeSinguarStringGenerator(field, options, scc);
+      if (field->type() == FieldDescriptor::TYPE_BYTES &&
+          field->options().ctype() == FieldOptions::CORD) {
+        if (field->real_containing_oneof()) {
+          return MakeOneofCordGenerator(field, options, scc);
+        } else {
+          return MakeSingularCordGenerator(field, options, scc);
+        }
+      } else {
+        return MakeSinguarStringGenerator(field, options, scc);
       }
     case FieldDescriptor::CPPTYPE_ENUM:
       return MakeSinguarEnumGenerator(field, options, scc);
@@ -264,8 +270,8 @@ std::unique_ptr<FieldGeneratorBase> MakeGenerator(const FieldDescriptor* field,
 void HasBitVars(const FieldDescriptor* field, const Options& opts,
                 absl::optional<uint32_t> idx, std::vector<Sub>& vars) {
   if (!idx.has_value()) {
-    vars.emplace_back("set_hasbit", "");
-    vars.emplace_back("clear_hasbit", "");
+    vars.emplace_back(Sub("set_hasbit", "").WithSuffix(";"));
+    vars.emplace_back(Sub("clear_hasbit", "").WithSuffix(";"));
     return;
   }
 
@@ -295,7 +301,7 @@ void InlinedStringVars(const FieldDescriptor* field, const Options& opts,
   }
 
   // The first bit is the tracking bit for on demand registering ArenaDtor.
-  ABSL_CHECK_GT(*idx, 0)
+  ABSL_CHECK_GT(*idx, 0u)
       << "_inlined_string_donated_'s bit 0 is reserved for arena dtor tracking";
 
   int32_t index = *idx / 32;
