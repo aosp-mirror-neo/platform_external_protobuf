@@ -981,6 +981,7 @@ genrule {
 filegroup {
     name: "libprotobuf-internal-python-srcs",
     srcs: ["python/google/**/*.py"],
+    exclude_srcs: ["python/google/**/*_test.py"],
     path: "python",
 }
 
