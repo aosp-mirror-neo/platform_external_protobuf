@@ -981,6 +981,7 @@ genrule {
 filegroup {
     name: "libprotobuf-internal-python-srcs",
     srcs: ["python/google/**/*.py"],
+    exclude_srcs: ["python/google/**/*_test.py"],
     path: "python",
 }
 
@@ -1043,6 +1044,7 @@ cc_defaults {
     shared_libs: ["liblog"],
 }
 
+// Protos used in the lite test.
 filegroup {
     name: "libprotobuf-test-protos-lite",
     srcs: [
@@ -1060,10 +1062,9 @@ filegroup {
     path: "src",
 }
 
-// Full test protos include some lite protos, because they are used in
-// unknown_field_set_unittest.cc, which mixes full and lite protos.
-// Full protos are a strict superset of lite protos, so this shouldn't
-// matter for the test.
+// Protos used only in full tests. This list should be all test protos
+// minus the lite protos. The full test uses both sets, all compiled as
+// full protos.
 filegroup {
     name: "libprotobuf-test-protos-full",
     srcs: [
@@ -1073,28 +1074,20 @@ filegroup {
         "src/google/protobuf/map_unittest.proto",
         "src/google/protobuf/test_messages_proto2.proto",
         "src/google/protobuf/test_messages_proto3.proto",
-        "src/google/protobuf/unittest.proto",
         "src/google/protobuf/unittest_arena.proto",
         "src/google/protobuf/unittest_custom_options.proto",
         "src/google/protobuf/unittest_drop_unknown_fields.proto",
         "src/google/protobuf/unittest_empty.proto",
         "src/google/protobuf/unittest_extension_set.proto",
         "src/google/protobuf/unittest_features.proto",
-        "src/google/protobuf/unittest_import.proto",
-        "src/google/protobuf/unittest_import_lite.proto",
-        "src/google/protobuf/unittest_import_public.proto",
-        "src/google/protobuf/unittest_import_public_lite.proto",
         "src/google/protobuf/unittest_lazy_dependencies.proto",
         "src/google/protobuf/unittest_lazy_dependencies_custom_option.proto",
         "src/google/protobuf/unittest_lazy_dependencies_enum.proto",
-        "src/google/protobuf/unittest_lite.proto",
         "src/google/protobuf/unittest_mset.proto",
         "src/google/protobuf/unittest_mset_wire_format.proto",
         "src/google/protobuf/unittest_no_field_presence.proto",
         "src/google/protobuf/unittest_preserve_unknown_enum.proto",
         "src/google/protobuf/unittest_preserve_unknown_enum2.proto",
-        "src/google/protobuf/unittest_proto3.proto",
-        "src/google/protobuf/unittest_proto3_arena.proto",
         "src/google/protobuf/unittest_proto3_bad_macros.proto",
         "src/google/protobuf/unittest_proto3_optional.proto",
         "src/google/protobuf/unittest_retention.proto",
@@ -1167,6 +1160,7 @@ cc_test {
     defaults: ["libprotobuf-test-defaults"],
     srcs: [
         ":libprotobuf-test-protos-full",
+        ":libprotobuf-test-protos-lite",
         "src/google/protobuf/any_test.cc",
         "src/google/protobuf/arena_align_test.cc",
         "src/google/protobuf/arena_test_util.cc",
@@ -1366,6 +1360,86 @@ cc_test_host {
         "libprotobuf-testing",
         "libprotoc",
     ],
+}
+
+// Java unit tests
+// =======================================================
+java_test_host {
+    name: "libprotobuf-java-full-test",
+    defaults: ["libprotobuf_errorprone_defaults"],
+    srcs: [
+        ":libprotobuf-test-protos-full",
+        ":libprotobuf-test-protos-lite",
+        "java/core/src/test/java/**/*.java",
+        "java/core/src/test/proto/**/*.proto",
+        "src/google/protobuf/unittest_embed_optimize_for.proto",
+        "src/google/protobuf/unittest_enormous_descriptor.proto",
+        "src/google/protobuf/unittest_invalid_features.proto",
+        "src/google/protobuf/unittest_no_generic_services.proto",
+        "src/google/protobuf/unittest_optimize_for.proto",
+    ],
+    // Exclude lite-only test protos (compiled in libprotobuf-java-full-test-lite-protos)
+    // and long-running UTF-8 validity tests.
+    exclude_srcs: [
+        "java/core/src/test/java/com/google/protobuf/DecodeUtf8Test.java",
+        "java/core/src/test/java/com/google/protobuf/IsValidUtf8Test.java",
+        "java/core/src/test/java/com/google/protobuf/IsValidUtf8TestUtil.java",
+        "java/core/src/test/proto/com/google/protobuf/nested_extension_lite.proto",
+        "java/core/src/test/proto/com/google/protobuf/non_nested_extension_lite.proto",
+    ],
+    data: [
+        "src/google/protobuf/testdata/*",
+    ],
+    java_resources: [
+        ":libprotobuf-java-full-test-resources",
+    ],
+    proto: {
+        type: "full",
+        local_include_dirs: [
+            "src",
+            "java/core/src/test/proto",
+        ],
+        canonical_path_from_root: false,
+    },
+    static_libs: [
+        "guava",
+        "junit",
+        "libprotobuf-java-full",
+        "libprotobuf-java-full-test-lite-protos",
+        "mockito",
+        "objenesis",
+        "truth",
+    ],
+    errorprone: {
+        javacflags: [
+            "-Xep:RedundantSetterCall:WARN",
+        ],
+    },
+}
+
+java_library_host {
+    name: "libprotobuf-java-full-test-lite-protos",
+    srcs: [
+        "java/core/src/test/proto/com/google/protobuf/nested_extension_lite.proto",
+        "java/core/src/test/proto/com/google/protobuf/non_nested_extension_lite.proto",
+    ],
+    proto: {
+        type: "lite",
+        local_include_dirs: [
+            "src",
+            "java/core/src/test/proto",
+        ],
+        canonical_path_from_root: false,
+    },
+}
+
+filegroup {
+    name: "libprotobuf-java-full-test-resources",
+    srcs: [
+        "src/google/protobuf/testdata/golden_message_oneof_implemented",
+        "src/google/protobuf/testdata/golden_packed_fields_message",
+    ],
+    path: "src",
 }
 
 // To test java proto params build rules.
