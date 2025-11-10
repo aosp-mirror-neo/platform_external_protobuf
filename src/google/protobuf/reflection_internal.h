@@ -187,7 +187,7 @@ class RepeatedPtrFieldWrapper : public RandomAccessRepeatedFieldAccessor {
 class MapFieldAccessor final : public RandomAccessRepeatedFieldAccessor {
  public:
   MapFieldAccessor() {}
-  virtual ~MapFieldAccessor() {}
+  ~MapFieldAccessor() {}
   bool IsEmpty(const Field* data) const override {
     return GetRepeatedField(data)->empty();
   }
@@ -234,18 +234,18 @@ class MapFieldAccessor final : public RandomAccessRepeatedFieldAccessor {
     return reinterpret_cast<RepeatedFieldType*>(
         reinterpret_cast<MapFieldBase*>(data)->MutableRepeatedField());
   }
-  virtual Message* New(const Value* value) const {
+  Message* New(const Value* value) const {
     return static_cast<const Message*>(value)->New();
   }
   // Convert an object received by this accessor to an MapEntry message to be
   // stored in the underlying MapFieldBase.
-  virtual void ConvertToEntry(const Value* value, Message* result) const {
+  void ConvertToEntry(const Value* value, Message* result) const {
     result->CopyFrom(*static_cast<const Message*>(value));
   }
   // Convert a MapEntry message stored in the underlying MapFieldBase to an
   // object that will be returned by this accessor.
-  virtual const Value* ConvertFromEntry(const Message& value,
-                                        Value* /*scratch_space*/) const {
+  const Value* ConvertFromEntry(const Message& value,
+                                Value* /*scratch_space*/) const {
     return static_cast<const Value*>(&value);
   }
 };
