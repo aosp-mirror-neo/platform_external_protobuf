@@ -35,11 +35,11 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_JAVA_ENUM_H__
 #define GOOGLE_PROTOBUF_COMPILER_JAVA_ENUM_H__
 
-#include <string>
 #include <vector>
 
-#include <google/protobuf/compiler/javamicro/javamicro_params.h>
-#include <google/protobuf/descriptor.h>
+#include "google/protobuf/compiler/javamicro/javamicro_params.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/io/printer.h"
 
 namespace google {
 namespace protobuf {

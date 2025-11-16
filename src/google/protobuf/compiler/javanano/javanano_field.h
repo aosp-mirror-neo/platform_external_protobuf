@@ -36,10 +36,12 @@
 #define GOOGLE_PROTOBUF_COMPILER_JAVANANO_FIELD_H__
 
 #include <map>
+#include <memory>
 #include <string>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/compiler/javanano/javanano_params.h>
+
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/compiler/javanano/javanano_params.h"
+#include "google/protobuf/io/printer.h"
 
 namespace google {
 namespace protobuf {
