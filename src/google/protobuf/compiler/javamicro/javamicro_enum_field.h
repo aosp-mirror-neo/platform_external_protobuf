@@ -54,13 +54,13 @@ class EnumFieldGenerator : public FieldGenerator {
   ~EnumFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
-  void GenerateMembers(io::Printer* printer) const;
-  void GenerateMergingCode(io::Printer* printer) const;
-  void GenerateParsingCode(io::Printer* printer) const;
-  void GenerateSerializationCode(io::Printer* printer) const;
-  void GenerateSerializedSizeCode(io::Printer* printer) const;
+  void GenerateMembers(io::Printer* printer) const override;
+  void GenerateMergingCode(io::Printer* printer) const override;
+  void GenerateParsingCode(io::Printer* printer) const override;
+  void GenerateSerializationCode(io::Printer* printer) const override;
+  void GenerateSerializedSizeCode(io::Printer* printer) const override;
 
-  std::string GetBoxedType() const;
+  std::string GetBoxedType() const override;
 
  private:
   const FieldDescriptor* descriptor_;
@@ -75,13 +75,13 @@ class RepeatedEnumFieldGenerator : public FieldGenerator {
   RepeatedEnumFieldGenerator& operator=(const RepeatedEnumFieldGenerator&) = delete;
 
   // implements FieldGenerator ---------------------------------------
-  void GenerateMembers(io::Printer* printer) const;
-  void GenerateMergingCode(io::Printer* printer) const;
-  void GenerateParsingCode(io::Printer* printer) const;
-  void GenerateSerializationCode(io::Printer* printer) const;
-  void GenerateSerializedSizeCode(io::Printer* printer) const;
+  void GenerateMembers(io::Printer* printer) const override;
+  void GenerateMergingCode(io::Printer* printer) const override;
+  void GenerateParsingCode(io::Printer* printer) const override;
+  void GenerateSerializationCode(io::Printer* printer) const override;
+  void GenerateSerializedSizeCode(io::Printer* printer) const override;
 
-  std::string GetBoxedType() const;
+  std::string GetBoxedType() const override;
 
  private:
   const FieldDescriptor* descriptor_;
