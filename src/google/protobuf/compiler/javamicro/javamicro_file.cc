@@ -34,14 +34,14 @@
 
 #include <iostream>
 
-#include <google/protobuf/compiler/javamicro/javamicro_file.h>
-#include <google/protobuf/compiler/javamicro/javamicro_enum.h>
-#include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
-#include <google/protobuf/compiler/javamicro/javamicro_message.h>
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/io/printer.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/descriptor.pb.h>
+#include "google/protobuf/compiler/javamicro/javamicro_file.h"
+#include "google/protobuf/compiler/javamicro/javamicro_enum.h"
+#include "google/protobuf/compiler/javamicro/javamicro_helpers.h"
+#include "google/protobuf/compiler/javamicro/javamicro_message.h"
+#include "google/protobuf/compiler/code_generator.h"
+#include "google/protobuf/io/printer.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/descriptor.pb.h"
 
 namespace google {
 namespace protobuf {

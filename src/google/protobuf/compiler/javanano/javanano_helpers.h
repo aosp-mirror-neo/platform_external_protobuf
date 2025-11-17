@@ -35,11 +35,13 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_JAVANANO_HELPERS_H__
 #define GOOGLE_PROTOBUF_COMPILER_JAVANANO_HELPERS_H__
 
+#include <map>
 #include <string>
-#include <google/protobuf/compiler/javanano/javanano_params.h>
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/io/printer.h>
+
+#include "google/protobuf/compiler/javanano/javanano_params.h"
+#include "google/protobuf/descriptor.pb.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/io/printer.h"
 
 namespace google {
 namespace protobuf {

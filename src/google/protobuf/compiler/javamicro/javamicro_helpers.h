@@ -36,9 +36,10 @@
 #define GOOGLE_PROTOBUF_COMPILER_JAVA_HELPERS_H__
 
 #include <string>
-#include <google/protobuf/compiler/javamicro/javamicro_params.h>
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/descriptor.h>
+
+#include "google/protobuf/compiler/javamicro/javamicro_params.h"
+#include "google/protobuf/descriptor.pb.h"
+#include "google/protobuf/descriptor.h"
 
 namespace google {
 namespace protobuf {
