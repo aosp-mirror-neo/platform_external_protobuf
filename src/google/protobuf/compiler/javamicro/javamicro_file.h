@@ -37,9 +37,10 @@
 
 #include <string>
 #include <vector>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/javamicro/javamicro_params.h>
+
+#include "google/protobuf/compiler/code_generator.h"
+#include "google/protobuf/compiler/javamicro/javamicro_params.h"
+#include "google/protobuf/io/printer.h"
 
 namespace google {
 namespace protobuf {

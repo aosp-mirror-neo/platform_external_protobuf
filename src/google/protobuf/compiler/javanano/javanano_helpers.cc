@@ -37,13 +37,14 @@
 #include <unordered_set>
 #include <vector>
 
-#include <absl/strings/ascii.h>
-#include <absl/strings/match.h>
-#include <absl/strings/strip.h>
-#include <absl/strings/str_cat.h>
-#include <google/protobuf/compiler/javanano/javanano_helpers.h>
-#include <google/protobuf/compiler/javanano/javanano_params.h>
-#include <google/protobuf/descriptor.pb.h>
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/strip.h"
+#include "absl/strings/str_cat.h"
+#include "google/protobuf/compiler/javanano/javanano_helpers.h"
+#include "google/protobuf/compiler/javanano/javanano_params.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/io/printer.h"
 
 namespace google {
 namespace protobuf {
