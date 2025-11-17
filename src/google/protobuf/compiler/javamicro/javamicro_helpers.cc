@@ -33,15 +33,16 @@
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
 #include <limits>
+#include <string>
 
-#include <absl/strings/ascii.h>
-#include <absl/strings/escaping.h>
-#include <absl/strings/match.h>
-#include <absl/strings/substitute.h>
-#include <absl/log/absl_log.h>
-#include <google/protobuf/compiler/javamicro/javamicro_helpers.h>
-#include <google/protobuf/compiler/javamicro/javamicro_params.h>
-#include <google/protobuf/descriptor.pb.h>
+#include "absl/strings/ascii.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/substitute.h"
+#include "absl/log/absl_log.h"
+#include "google/protobuf/compiler/javamicro/javamicro_helpers.h"
+#include "google/protobuf/compiler/javamicro/javamicro_params.h"
+#include "google/protobuf/descriptor.pb.h"
 
 namespace google {
 namespace protobuf {

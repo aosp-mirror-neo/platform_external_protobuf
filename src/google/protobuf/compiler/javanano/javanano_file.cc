@@ -33,16 +33,19 @@
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
 #include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
-#include <google/protobuf/compiler/javanano/javanano_file.h>
-#include <google/protobuf/compiler/javanano/javanano_enum.h>
-#include <google/protobuf/compiler/javanano/javanano_extension.h>
-#include <google/protobuf/compiler/javanano/javanano_helpers.h>
-#include <google/protobuf/compiler/javanano/javanano_message.h>
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/io/printer.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/descriptor.pb.h>
+#include "google/protobuf/compiler/javanano/javanano_file.h"
+#include "google/protobuf/compiler/javanano/javanano_enum.h"
+#include "google/protobuf/compiler/javanano/javanano_extension.h"
+#include "google/protobuf/compiler/javanano/javanano_helpers.h"
+#include "google/protobuf/compiler/javanano/javanano_message.h"
+#include "google/protobuf/compiler/code_generator.h"
+#include "google/protobuf/io/printer.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/descriptor.pb.h"
 
 namespace google {
 namespace protobuf {
