@@ -38,7 +38,9 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <google/protobuf/compiler/javanano/javanano_field.h>
+
+#include "google/protobuf/compiler/javanano/javanano_field.h"
+#include "google/protobuf/io/printer.h"
 
 namespace google {
 namespace protobuf {
