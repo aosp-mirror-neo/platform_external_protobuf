@@ -56,15 +56,15 @@ class PrimitiveFieldGenerator : public FieldGenerator {
   ~PrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
-  bool SavedDefaultNeeded() const;
-  void GenerateInitSavedDefaultCode(io::Printer* printer) const;
-  void GenerateMembers(io::Printer* printer, bool lazy_init) const;
-  void GenerateClearCode(io::Printer* printer) const;
-  void GenerateMergingCode(io::Printer* printer) const;
-  void GenerateSerializationCode(io::Printer* printer) const;
-  void GenerateSerializedSizeCode(io::Printer* printer) const;
-  void GenerateEqualsCode(io::Printer* printer) const;
-  void GenerateHashCodeCode(io::Printer* printer) const;
+  bool SavedDefaultNeeded() const override;
+  void GenerateInitSavedDefaultCode(io::Printer* printer) const override;
+  void GenerateMembers(io::Printer* printer, bool lazy_init) const override;
+  void GenerateClearCode(io::Printer* printer) const override;
+  void GenerateMergingCode(io::Printer* printer) const override;
+  void GenerateSerializationCode(io::Printer* printer) const override;
+  void GenerateSerializedSizeCode(io::Printer* printer) const override;
+  void GenerateEqualsCode(io::Printer* printer) const override;
+  void GenerateHashCodeCode(io::Printer* printer) const override;
 
  private:
   void GenerateSerializationConditional(io::Printer* printer) const;
@@ -82,15 +82,15 @@ class AccessorPrimitiveFieldGenerator : public FieldGenerator {
   ~AccessorPrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
-  bool SavedDefaultNeeded() const;
-  void GenerateInitSavedDefaultCode(io::Printer* printer) const;
-  void GenerateMembers(io::Printer* printer, bool lazy_init) const;
-  void GenerateClearCode(io::Printer* printer) const;
-  void GenerateMergingCode(io::Printer* printer) const;
-  void GenerateSerializationCode(io::Printer* printer) const;
-  void GenerateSerializedSizeCode(io::Printer* printer) const;
-  void GenerateEqualsCode(io::Printer* printer) const;
-  void GenerateHashCodeCode(io::Printer* printer) const;
+  bool SavedDefaultNeeded() const override;
+  void GenerateInitSavedDefaultCode(io::Printer* printer) const override;
+  void GenerateMembers(io::Printer* printer, bool lazy_init) const override;
+  void GenerateClearCode(io::Printer* printer) const override;
+  void GenerateMergingCode(io::Printer* printer) const override;
+  void GenerateSerializationCode(io::Printer* printer) const override;
+  void GenerateSerializedSizeCode(io::Printer* printer) const override;
+  void GenerateEqualsCode(io::Printer* printer) const override;
+  void GenerateHashCodeCode(io::Printer* printer) const override;
 
  private:
   const FieldDescriptor* descriptor_;
@@ -106,13 +106,13 @@ class PrimitiveOneofFieldGenerator : public FieldGenerator {
   ~PrimitiveOneofFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
-  void GenerateMembers(io::Printer* printer, bool lazy_init) const;
-  void GenerateClearCode(io::Printer* printer) const;
-  void GenerateMergingCode(io::Printer* printer) const;
-  void GenerateSerializationCode(io::Printer* printer) const;
-  void GenerateSerializedSizeCode(io::Printer* printer) const;
-  void GenerateEqualsCode(io::Printer* printer) const;
-  void GenerateHashCodeCode(io::Printer* printer) const;
+  void GenerateMembers(io::Printer* printer, bool lazy_init) const override;
+  void GenerateClearCode(io::Printer* printer) const override;
+  void GenerateMergingCode(io::Printer* printer) const override;
+  void GenerateSerializationCode(io::Printer* printer) const override;
+  void GenerateSerializedSizeCode(io::Printer* printer) const override;
+  void GenerateEqualsCode(io::Printer* printer) const override;
+  void GenerateHashCodeCode(io::Printer* printer) const override;
 
  private:
   const FieldDescriptor* descriptor_;
@@ -128,15 +128,15 @@ class RepeatedPrimitiveFieldGenerator : public FieldGenerator {
   ~RepeatedPrimitiveFieldGenerator();
 
   // implements FieldGenerator ---------------------------------------
-  void GenerateMembers(io::Printer* printer, bool lazy_init) const;
-  void GenerateClearCode(io::Printer* printer) const;
-  void GenerateMergingCode(io::Printer* printer) const;
-  void GenerateMergingCodeFromPacked(io::Printer* printer) const;
-  void GenerateSerializationCode(io::Printer* printer) const;
-  void GenerateSerializedSizeCode(io::Printer* printer) const;
-  void GenerateEqualsCode(io::Printer* printer) const;
-  void GenerateHashCodeCode(io::Printer* printer) const;
-  void GenerateFixClonedCode(io::Printer* printer) const;
+  void GenerateMembers(io::Printer* printer, bool lazy_init) const override;
+  void GenerateClearCode(io::Printer* printer) const override;
+  void GenerateMergingCode(io::Printer* printer) const override;
+  void GenerateMergingCodeFromPacked(io::Printer* printer) const override;
+  void GenerateSerializationCode(io::Printer* printer) const override;
+  void GenerateSerializedSizeCode(io::Printer* printer) const override;
+  void GenerateEqualsCode(io::Printer* printer) const override;
+  void GenerateHashCodeCode(io::Printer* printer) const override;
+  void GenerateFixClonedCode(io::Printer* printer) const override;
 
  private:
   void GenerateRepeatedDataSizeCode(io::Printer* printer) const;
