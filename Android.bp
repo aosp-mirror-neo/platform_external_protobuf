@@ -1107,6 +1107,7 @@ filegroup {
         "src/google/protobuf/unittest_mset.proto",
         "src/google/protobuf/unittest_mset_wire_format.proto",
         "src/google/protobuf/unittest_no_field_presence.proto",
+        "src/google/protobuf/unittest_no_generic_services.proto",
         "src/google/protobuf/unittest_preserve_unknown_enum.proto",
         "src/google/protobuf/unittest_preserve_unknown_enum2.proto",
         "src/google/protobuf/unittest_proto3_bad_macros.proto",
@@ -1410,7 +1411,6 @@ java_test_host {
         "src/google/protobuf/unittest_embed_optimize_for.proto",
         "src/google/protobuf/unittest_enormous_descriptor.proto",
         "src/google/protobuf/unittest_invalid_features.proto",
-        "src/google/protobuf/unittest_no_generic_services.proto",
         "src/google/protobuf/unittest_optimize_for.proto",
     ],
     // Exclude lite-only test protos (compiled in libprotobuf-java-full-test-lite-protos)
@@ -1464,6 +1464,39 @@ java_library_host {
         ],
         canonical_path_from_root: false,
     },
+}
+
+// Python unit tests
+// =======================================================
+python_test_host {
+    name: "libprotobuf-python-test",
+    main: "python/android_test_main.py",
+    srcs: [
+        ":libprotobuf-python-test-sources",
+        ":libprotobuf-test-protos-full",
+        ":libprotobuf-test-protos-lite",
+        "python/android_test_main.py",
+    ],
+    libs: [
+        "libprotobuf-python",
+    ],
+    data: [
+        "src/google/protobuf/testdata/bad_utf8_string",
+        "src/google/protobuf/testdata/text_format_*.txt",
+    ],
+    proto: {
+        local_include_dirs: ["src"],
+        canonical_path_from_root: false,
+    },
+}
+
+filegroup {
+    name: "libprotobuf-python-test-sources",
+    srcs: [
+        "python/google/protobuf/internal/*_test.py",
+        "python/google/protobuf/internal/**/*.proto",
+    ],
+    path: "python",
 }
 
 // To test java proto params build rules.
