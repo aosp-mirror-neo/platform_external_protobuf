@@ -40,16 +40,10 @@
 
 #include "google/protobuf/compiler/code_generator.h"
 #include "google/protobuf/compiler/javamicro/javamicro_params.h"
+#include "google/protobuf/descriptor.h"
 #include "google/protobuf/io/printer.h"
 
 namespace google {
-namespace protobuf {
-  class FileDescriptor;        // descriptor.h
-  namespace io {
-    class Printer;             // printer.h
-  }
-}
-
 namespace protobuf {
 namespace compiler {
 namespace javamicro {
