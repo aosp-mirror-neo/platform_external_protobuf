@@ -116,7 +116,7 @@ void MessageGenerator::Generate(io::Printer* printer) {
         "'store_unknown_fields' generator option is 'true'\n";
   }
 
-  const std::string& file_name = descriptor_->file()->name();
+  const auto file_name = descriptor_->file()->name();
   bool is_own_file =
     params_.java_multiple_files(file_name)
       && descriptor_->containing_type() == NULL;
