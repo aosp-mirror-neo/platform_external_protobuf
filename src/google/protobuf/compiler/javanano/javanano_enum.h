@@ -43,12 +43,6 @@
 
 namespace google {
 namespace protobuf {
-  namespace io {
-    class Printer;             // printer.h
-  }
-}
-
-namespace protobuf {
 namespace compiler {
 namespace javanano {
 
