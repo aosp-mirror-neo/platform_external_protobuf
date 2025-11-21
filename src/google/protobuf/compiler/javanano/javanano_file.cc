@@ -213,14 +213,14 @@ void FileGenerator::Generate(io::Printer* printer) {
     "}\n");
 }
 
-template<typename GeneratorClass, typename DescriptorClass>
+template <typename GeneratorClass, typename DescriptorClass>
 static void GenerateSibling(const std::string& package_dir,
                             const std::string& java_package,
                             const DescriptorClass* descriptor,
                             GeneratorContext* output_directory,
                             std::vector<std::string>* file_list,
                             const Params& params) {
-  std::string filename = package_dir + descriptor->name() + ".java";
+  std::string filename = absl::StrCat(package_dir, descriptor->name(), ".java");
   file_list->push_back(filename);
 
   std::unique_ptr<io::ZeroCopyOutputStream> output(
