@@ -19,6 +19,7 @@ TESTS = [
     "proto_builder_test",
     "proto_json_test",
     "proto_test",
+    "proto_text_test",
     "reflection_cpp_test",
     "reflection_test",
     "runtime_version_test",
