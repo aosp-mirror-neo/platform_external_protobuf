@@ -756,7 +756,10 @@ class alignas(8) GlobalEmptyStringConstexpr {
   // There are some builds where the default constructed string can't be used as
   // `constinit` even though the constructor is `constexpr` and can be used
   // during constant evaluation.
-#if !defined(_MSC_VER)
+  //
+  // Android local modification: additionally disable the optimization for Xtensa
+  // to work around a compiler bug.
+#if !defined(_MSC_VER) && !defined(__XTENSA__)
   template <typename T = std::string, bool = (T(), true)>
   static constexpr std::true_type HasConstexprDefaultConstructor(int) {
     return {};
