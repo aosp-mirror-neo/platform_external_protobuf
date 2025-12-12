@@ -1117,7 +1117,15 @@ cc_defaults {
         local_include_dirs: ["src"],
         canonical_path_from_root: false,
     },
+    cflags: ["-Wno-pragma-clang-attribute"],
     shared_libs: ["liblog"],
+    sanitize: {
+        // Unsigned integer overflow sanitization is not supported upstream
+        // because it's defined behavior, but some vendors need it internally.
+        // We enable it only in tests to ensure that clients which enable it
+        // keep working.
+        integer_overflow: true,
+    },
 }
 
 // Protos used in the lite test.
