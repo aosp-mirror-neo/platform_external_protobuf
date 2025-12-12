@@ -84,6 +84,13 @@ T ReadAndReset(char* p) {
   return result;
 }
 
+// Android local modification: we want to run with unsigned integer overflow
+// sanitizer enabled to support vendor use cases, but tests below rely on
+// unsigned overflow. Disable the sanitizer for these tests.
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((no_sanitize("unsigned-integer-overflow"))), apply_to=function)
+#endif
+
 TEST(FastVarints, NameHere) {
   constexpr uint8_t kHasBitsOffset = 4;
   constexpr uint8_t kHasBitIndex = 0;
@@ -264,6 +271,10 @@ TEST(FastVarints, NameHere) {
     }
   }
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 
 MATCHER_P3(IsEntryForFieldNum, table, field_num, field_numbers_table,
            absl::StrCat(negation ? "isn't " : "",
