@@ -786,6 +786,7 @@ java_library_static {
         "com.android.neuralnetworks",
         "com.android.tethering",
         "com.android.wifi",
+        "com.android.telephonycore",
     ],
 }
 
