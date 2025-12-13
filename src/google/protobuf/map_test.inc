@@ -397,6 +397,13 @@ static int k0 = 812398771;
 static int k1 = 1312938717;
 static int k2 = 1321555333;
 
+// Android local modification: we want to run with unsigned integer overflow
+// sanitizer enabled to support vendor use cases, but the test below relies
+// on unsigned overflow. Disable the sanitizer for this test.
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((no_sanitize("unsigned-integer-overflow"))), apply_to=function)
+#endif
+
 TEST_F(MapImplTest, CopyIteratorStressTest) {
   std::vector<Map<int32_t, int32_t>::iterator> v;
   const int kIters = 1e5;
@@ -411,6 +418,10 @@ TEST_F(MapImplTest, CopyIteratorStressTest) {
     ASSERT_EQ(i->second, (*it)->second);
   }
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 
 template <typename T, typename U>
 static void TestValidityForAllKeysExcept(int key_to_avoid, const T& check_map,
@@ -468,6 +479,13 @@ static void TestOldVersusNewIterator(int skip, Map<int, int>* m) {
   TestEqualIterators<IteratorType>(old, m->find(old->first), m->end());
   TestEqualIterators<IteratorType>(old, after_growth, m->end());
 }
+
+// Android local modification: we want to run with unsigned integer overflow
+// sanitizer enabled to support vendor use cases, but the test below relies
+// on unsigned overflow. Disable the sanitizer for this test.
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((no_sanitize("unsigned-integer-overflow"))), apply_to=function)
+#endif
 
 // Create and test an n-element Map, with emphasis on iterator correctness.
 static void StressTestIterators(int n) {
@@ -553,6 +571,10 @@ TEST_F(MapImplTest, IteratorInvalidation) {
     StressTestIterators(i);
   }
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 
 // Test that erase() revalidates iterators.
 TEST_F(MapImplTest, EraseRevalidates) {
@@ -3976,6 +3998,13 @@ static std::string ConstructKey(uint64_t n) {
   }
 }
 
+// Android local modification: we want to run with unsigned integer overflow
+// sanitizer enabled to support vendor use cases, but the test below relies
+// on unsigned overflow. Disable the sanitizer for this test.
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((no_sanitize("unsigned-integer-overflow"))), apply_to=function)
+#endif
+
 TEST(MapSerializationTest, Deterministic) {
   const int kIters = 25;
   UNITTEST::TestMaps t;
@@ -4019,6 +4048,10 @@ TEST(MapSerializationTest, Deterministic) {
   EXPECT_TRUE(u.ParseFromString(s1));
   EXPECT_TRUE(util::MessageDifferencer::Equals(u, t));
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 
 static std::string GetGoldenMessageTextProto() {
   static std::string* golden_message_textproto = [] {
