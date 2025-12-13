@@ -860,6 +860,13 @@ TEST_2D(TokenizerTest, DocComments, kDocCommentCases, kBlockSizes) {
 
 // -------------------------------------------------------------------
 
+// Android local modification: we want to run with unsigned integer overflow
+// sanitizer enabled to support vendor use cases, but the test below relies
+// on unsigned overflow. Disable the sanitizer for this test.
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((no_sanitize("unsigned-integer-overflow"))), apply_to=function)
+#endif
+
 // Test parse helpers.
 // TODO: Add a fuzz test for this.
 TEST_F(TokenizerTest, ParseInteger) {
@@ -993,6 +1000,10 @@ TEST_F(TokenizerTest, ParseInteger) {
     }
   }
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 
 TEST_F(TokenizerTest, ParseFloat) {
   EXPECT_DOUBLE_EQ(1, Tokenizer::ParseFloat("1."));
