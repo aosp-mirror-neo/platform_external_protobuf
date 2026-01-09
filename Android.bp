@@ -227,7 +227,7 @@ cc_defaults {
 
     // This suffix must be updated when a new version is imported.
     // It should match the "cpp" entry in version.json.
-    suffix: "-6.33.1",
+    suffix: "-6.33.2",
 }
 
 // Defaults for the lite library when thread-local storage is enabled.
@@ -1405,6 +1405,7 @@ filegroup {
         "src/google/protobuf/compiler/cpp/test_bad_identifiers_editions.proto",
         "src/google/protobuf/compiler/cpp/test_large_enum_value.proto",
         "src/google/protobuf/unittest.proto",
+        "src/google/protobuf/unittest_custom_features.proto",
         "src/google/protobuf/unittest_custom_options.proto",
         "src/google/protobuf/unittest_embed_optimize_for.proto",
         "src/google/protobuf/unittest_enormous_descriptor.proto",
