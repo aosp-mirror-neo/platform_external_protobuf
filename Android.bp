@@ -227,7 +227,7 @@ cc_defaults {
 
     // This suffix must be updated when a new version is imported.
     // It should match the "cpp" entry in version.json.
-    suffix: "-6.33.2",
+    suffix: "-6.33.4",
 }
 
 // Defaults for the lite library when thread-local storage is enabled.
@@ -1427,6 +1427,8 @@ cc_test_host {
     defaults: ["libprotobuf-test-defaults"],
     srcs: [
         ":libprotoc-test-protos",
+        "editions/edition_defaults_test_utils.cc",
+        "editions/edition_defaults_test_utils_test.cc",
         "src/google/protobuf/compiler/annotation_test_util.cc",
         "src/google/protobuf/compiler/code_generator_unittest.cc",
         "src/google/protobuf/compiler/command_line_interface_tester.cc",
