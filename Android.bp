@@ -227,7 +227,7 @@ cc_defaults {
 
     // This suffix must be updated when a new version is imported.
     // It should match the "cpp" entry in version.json.
-    suffix: "-6.33.4",
+    suffix: "-6.33.5",
 }
 
 // Defaults for the lite library when thread-local storage is enabled.
