@@ -107,11 +107,8 @@ int ProtobufMain(int argc, char* argv[]) {
 
   // Rust
   rust::RustGenerator rust_generator;
-  // Android local modification: register native Rust support using the
-  // parameter name rust_google_out instead of rust_out, as the latter is
-  // already used by the plugin in the Rust crate protobuf-codegen.
-  cli.RegisterGenerator("--rust_google_out", "--rust_google_opt",
-                        &rust_generator, "Generate Rust sources.");
+  cli.RegisterGenerator("--rust_out", "--rust_opt", &rust_generator,
+                        "Generate Rust sources.");
 #ifdef DISABLE_PROTOC_CONFIG
   auto cleanup = internal::DisableAllowlistInternalOnly();
 #endif  // DISABLE_PROTOC_CONFIG
