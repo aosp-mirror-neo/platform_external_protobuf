@@ -19,10 +19,10 @@ pub use crate::ProtoStr;
 use crate::Proxied;
 pub use std::fmt::Debug;
 
-#[cfg(all(bzl, cpp_kernel))]
+#[cfg(all(any(bzl, soong), cpp_kernel))]
 #[path = "cpp.rs"]
 pub mod runtime;
-#[cfg(any(not(bzl), upb_kernel))]
+#[cfg(all(not(soong), any(not(bzl), upb_kernel)))]
 #[path = "upb.rs"]
 pub mod runtime;
 
