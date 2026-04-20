@@ -934,6 +934,25 @@ java_library_static {
     },
 }
 
+java_library_static {
+    name: "libprotobuf-kotlin-lite",
+    visibility: ["//visibility:public"],
+    host_supported: true,
+    sdk_version: "core_current",
+    defaults: ["libprotobuf_errorprone_defaults"],
+
+    srcs: [
+        "java/kotlin-lite/src/main/kotlin/**/*.kt",
+    ],
+    static_libs: [
+        "libprotobuf-java-lite",
+    ],
+
+    optimize: {
+        proguard_flags_files: ["java/lite/proguard.pgcfg"],
+    },
+}
+
 // Java full library (for host-side users)
 // =======================================================
 java_library_host {
@@ -961,6 +980,19 @@ java_library_host {
             enabled: true,
         },
     },
+}
+
+java_library_host {
+    name: "libprotobuf-kotlin-full",
+    defaults: ["error_prone_dependency_defaults"],
+    visibility: ["//visibility:public"],
+
+    srcs: [
+        "java/kotlin/src/main/kotlin/**/*.kt",
+    ],
+    static_libs: [
+        "libprotobuf-java-full",
+    ],
 }
 
 java_library_host {
@@ -1561,6 +1593,42 @@ java_library_host {
         ],
         canonical_path_from_root: false,
     },
+}
+
+java_test_host {
+    name: "libprotobuf-kotlin-full-test",
+    defaults: ["libprotobuf_errorprone_defaults"],
+    srcs: [
+        ":libprotobuf-test-protos-full",
+        ":libprotobuf-test-protos-lite",
+        "java/core/src/main/resources/google/protobuf/java_features.proto",
+        "java/core/src/test/java/com/google/protobuf/TestUtil.java",
+        "java/core/src/test/java/com/google/protobuf/TestUtilLite.java",
+        "java/kotlin/src/test/kotlin/**/*.kt",
+        "java/kotlin/src/test/proto/**/*.proto",
+    ],
+    data: [
+        "src/google/protobuf/testdata/*",
+    ],
+    proto: {
+        type: "kotlin-full",
+        local_include_dirs: [
+            "java/core/src/main/resources",
+            "java/kotlin/src/test/proto",
+            "src",
+        ],
+        canonical_path_from_root: false,
+    },
+    static_libs: [
+        "guava",
+        "guava-testlib",
+        "junit",
+        "kotlin-reflect",
+        "kotlin-test",
+        "libprotobuf-kotlin-full",
+        "mockito",
+        "truth",
+    ],
 }
 
 // Python unit tests
