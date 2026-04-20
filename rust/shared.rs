@@ -64,7 +64,7 @@ mod proxied;
 mod repeated;
 mod string;
 
-#[cfg(not(bzl))]
+#[cfg(all(not(bzl), not(soong)))]
 #[path = "upb/lib.rs"]
 mod upb;
 

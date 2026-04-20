@@ -1,0 +1,84 @@
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+genrule {
+    name: "protobuf-rust-well-known-gen",
+    tools: [
+        "aprotoc",
+    ],
+    cmd: "$(location aprotoc) " +
+        // Ideally comes from the .path attribute, but not avail in genrule
+        "-Iexternal/protobuf/src " +
+        "--rust_opt=experimental-codegen=enabled,kernel=cpp " +
+        "$(locations :libprotobuf-internal-protos-no-protoc) " +
+        "--rust_out=$(genDir)",
+    srcs: [
+        ":libprotobuf-internal-protos-no-protoc",
+    ],
+    out: [
+        // It is load-bearing that this is listed first - it will be the crate root
+        "google/protobuf/generated.rs",
+        "google/protobuf/any.c.pb.rs",
+        "google/protobuf/any.pb.thunks.cc",
+        "google/protobuf/api.c.pb.rs",
+        "google/protobuf/api.pb.thunks.cc",
+        "google/protobuf/descriptor.c.pb.rs",
+        "google/protobuf/descriptor.pb.thunks.cc",
+        "google/protobuf/duration.c.pb.rs",
+        "google/protobuf/duration.pb.thunks.cc",
+        "google/protobuf/empty.c.pb.rs",
+        "google/protobuf/empty.pb.thunks.cc",
+        "google/protobuf/field_mask.c.pb.rs",
+        "google/protobuf/field_mask.pb.thunks.cc",
+        "google/protobuf/source_context.c.pb.rs",
+        "google/protobuf/source_context.pb.thunks.cc",
+        "google/protobuf/struct.c.pb.rs",
+        "google/protobuf/struct.pb.thunks.cc",
+        "google/protobuf/timestamp.c.pb.rs",
+        "google/protobuf/timestamp.pb.thunks.cc",
+        "google/protobuf/type.c.pb.rs",
+        "google/protobuf/type.pb.thunks.cc",
+        "google/protobuf/wrappers.c.pb.rs",
+        "google/protobuf/wrappers.pb.thunks.cc",
+    ],
+}
+
+cc_library_static {
+    name: "libprotobuf_rust_well_known_cpp_thunk",
+    static_libs: ["libprotobuf_cpp_api"],
+    shared_libs: ["libprotobuf-cpp-full"],
+    srcs: [":protobuf-rust-well-known-gen"],
+    host_supported: true,
+}
+
+rust_library {
+    name: "libprotobuf_well_known_types",
+    crate_name: "protobuf_well_known_types",
+    srcs: [":protobuf-rust-well-known-gen"],
+    rustlibs: ["libprotobuf_google"],
+    static_libs: [
+        "libprotobuf_cpp_api",
+    ],
+    whole_static_libs: [
+        "libprotobuf_rust_well_known_cpp_thunk",
+    ],
+    shared_libs: ["libprotobuf-cpp-full"],
+    host_supported: true,
+}
+
+// With build system support, this would be another available output from the proto library declaration
+filegroup {
+    name: "protobuf_well_known_types_mapping",
+    srcs: ["crate_mapping.txt"],
+}
