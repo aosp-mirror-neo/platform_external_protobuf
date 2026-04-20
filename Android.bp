@@ -947,6 +947,10 @@ java_library_static {
     static_libs: [
         "libprotobuf-java-lite",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
+    ],
 
     optimize: {
         proguard_flags_files: ["java/lite/proguard.pgcfg"],
