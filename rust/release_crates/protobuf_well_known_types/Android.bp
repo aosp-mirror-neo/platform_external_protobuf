@@ -64,6 +64,7 @@ cc_library_static {
 
 rust_library {
     name: "libprotobuf_well_known_types",
+    visibility: ["//visibility:public"],
     crate_name: "protobuf_well_known_types",
     srcs: [":protobuf-rust-well-known-gen"],
     rustlibs: ["libprotobuf_google"],
@@ -80,5 +81,6 @@ rust_library {
 // With build system support, this would be another available output from the proto library declaration
 filegroup {
     name: "protobuf_well_known_types_mapping",
+    visibility: ["//visibility:public"],
     srcs: ["crate_mapping.txt"],
 }
