@@ -1065,9 +1065,18 @@ filegroup {
     name: "libprotobuf-internal-protos",
     visibility: ["//visibility:public"],
     srcs: [
+        ":libprotobuf-internal-protos-no-protoc",
+        "src/google/protobuf/compiler/plugin.proto",
+    ],
+    path: "src",
+}
+
+filegroup {
+    name: "libprotobuf-internal-protos-no-protoc",
+    visibility: ["//visibility:public"],
+    srcs: [
         "src/google/protobuf/any.proto",
         "src/google/protobuf/api.proto",
-        "src/google/protobuf/compiler/plugin.proto",
         "src/google/protobuf/descriptor.proto",
         "src/google/protobuf/duration.proto",
         "src/google/protobuf/empty.proto",
@@ -1726,4 +1735,124 @@ cc_binary_host {
         "libz",
     ],
     stl: "libc++_static",
+}
+
+rust_defaults {
+    name: "libprotobuf_google_version_defaults",
+    cargo_pkg_version: "4.33.5",
+    cargo_env_compat: true,
+}
+
+rust_defaults {
+    name: "libprotobuf_google_defaults",
+    crate_name: "protobuf",
+    defaults: ["libprotobuf_google_version_defaults"],
+    srcs: ["rust/shared.rs"],
+    edition: "2021",
+    rustlibs: [
+        "libutf8_google",
+        "libprotobuf_cpp_alloc",
+    ],
+    proc_macros: [
+        "libpaste",
+        "libprotobuf_macros_google",
+    ],
+    static_libs: [
+        "libprotobuf_cpp_api",
+    ],
+    shared_libs: [
+        "libprotobuf-cpp-full",
+        "libc++",
+    ],
+    cfgs: [
+        "cpp_kernel",
+    ],
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+}
+
+rust_library {
+    name: "libprotobuf_google",
+    defaults: ["libprotobuf_google_defaults"],
+}
+
+rust_test {
+    name: "libprotobuf_google_test",
+    team: "trendy_team_android_rust",
+    defaults: ["libprotobuf_google_defaults"],
+    rustlibs: ["libgoogletest_rust"],
+}
+
+rust_library {
+    name: "libutf8_google",
+    crate_name: "utf8",
+    srcs: ["rust/utf8.rs"],
+    edition: "2021",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+}
+
+rust_proc_macro {
+    name: "libprotobuf_macros_google",
+    crate_name: "protobuf_macros",
+    srcs: ["rust/protobuf_macros/proto_proc_macro_impl.rs"],
+    edition: "2021",
+    rustlibs: [
+        "libquote",
+        "libsyn",
+    ],
+}
+
+rust_library {
+    name: "libprotobuf_cpp_alloc",
+    crate_name: "protobuf_cpp_alloc",
+    srcs: ["rust/cpp_kernel/rust_alloc_for_cpp_api.rs"],
+    edition: "2021",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+}
+
+rust_ffi_static {
+    name: "libprotobuf_cpp_alloc_ffi",
+    crate_name: "protobuf_cpp_alloc",
+    srcs: ["rust/cpp_kernel/rust_alloc_for_cpp_api.rs"],
+    edition: "2021",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+}
+
+cc_library_static {
+    name: "libprotobuf_cpp_api",
+    srcs: [
+        "rust/cpp_kernel/compare.cc",
+        "rust/cpp_kernel/debug.cc",
+        "rust/cpp_kernel/map.cc",
+        "rust/cpp_kernel/message.cc",
+        "rust/cpp_kernel/repeated.cc",
+        "rust/cpp_kernel/strings.cc",
+    ],
+    export_include_dirs: ["."],
+    whole_static_libs: ["libprotobuf_cpp_alloc_ffi"],
+    static_libs: ["absl_functional_overload"],
+    shared_libs: ["libprotobuf-cpp-full"],
+    stl: "libc++",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
 }
