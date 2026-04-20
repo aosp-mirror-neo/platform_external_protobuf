@@ -1,8 +1,13 @@
 use protobuf::proto;
 
+#[cfg(not(soong))]
 mod protos {
     include!(concat!(env!("OUT_DIR"), "/protobuf_generated/proto_example/generated.rs"));
 }
+
+#[cfg(soong)]
+use protobuf_example as protos;
+
 use protos::Foo;
 
 fn main() {
