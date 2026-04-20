@@ -1,0 +1,112 @@
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+filegroup {
+    name: "protobuf-rust-example-protos",
+    srcs: [
+        "proto/proto_example/foo.proto",
+        "proto/proto_example/bar/bar.proto",
+    ],
+    path: "proto",
+}
+
+genrule {
+    name: "protobuf-rust-example-gen",
+    tools: [
+        "aprotoc",
+    ],
+    cmd: "$(location aprotoc) " +
+        // Ideally comes from the .path attribute of the first proto group, but not avail in genrule
+        "-Iexternal/protobuf/rust/release_crates/protobuf_example/proto " +
+        // Ideally comes from the .path attribute of the second proto group, but not avail in genrule
+        "-Iexternal/protobuf/src " +
+        "--rust_opt=experimental-codegen=enabled,kernel=cpp,crate_mapping=$(location :protobuf_well_known_types_mapping) " +
+        "$(locations :protobuf-rust-example-protos) " +
+        "--rust_out=$(genDir)",
+    srcs: [
+        ":protobuf-rust-example-protos",
+        ":libprotobuf-internal-protos",
+        ":protobuf_well_known_types_mapping",
+    ],
+    out: [
+        // Load bearing that this is listed first
+        "proto_example/generated.rs",
+        "proto_example/foo.c.pb.rs",
+        "proto_example/foo.pb.thunks.cc",
+        "proto_example/bar/bar.c.pb.rs",
+        "proto_example/bar/bar.pb.thunks.cc",
+    ],
+}
+
+cc_library_static {
+    name: "libprotobuf_rust_example_thunk",
+    static_libs: [
+        "libprotobuf_cpp_api",
+        "libprotobuf_rust_example_cpp_proto",
+    ],
+    shared_libs: ["libprotobuf-cpp-full"],
+    srcs: [
+        ":protobuf-rust-example-gen",
+    ],
+    host_supported: true,
+}
+
+// If you actually used the protos somewhere else, you'd depend on that library instead of regenerating
+cc_library_static {
+    name: "libprotobuf_rust_example_cpp_proto",
+    srcs: [
+        ":protobuf-rust-example-protos",
+    ],
+    shared_libs: ["libprotobuf-cpp-full"],
+    proto: {
+        export_proto_headers: true,
+        canonical_path_from_root: false,
+        include_dirs: [
+            "external/protobuf/src",
+            "external/protobuf/rust/release_crates/protobuf_example/proto",
+        ],
+    },
+    host_supported: true,
+}
+
+rust_library {
+    name: "libprotobuf_example_rust",
+    crate_name: "protobuf_example",
+    srcs: [":protobuf-rust-example-gen"],
+    rustlibs: [
+        "libprotobuf_google",
+        "libprotobuf_well_known_types",
+    ],
+    static_libs: [
+        "libprotobuf_rust_example_cpp_proto",
+        "libprotobuf_cpp_api",
+    ],
+    whole_static_libs: [
+        "libprotobuf_rust_example_thunk",
+    ],
+    shared_libs: [
+        "libprotobuf-cpp-full",
+    ],
+    host_supported: true,
+}
+
+rust_binary {
+    name: "rust_protobuf_example_bin",
+    srcs: ["src/main.rs"],
+    rustlibs: [
+        "libprotobuf_example_rust",
+        "libprotobuf_google",
+    ],
+    host_supported: true,
+}
