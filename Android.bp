@@ -1778,6 +1778,7 @@ rust_defaults {
 
 rust_library {
     name: "libprotobuf_google",
+    visibility: ["//visibility:public"],
     defaults: ["libprotobuf_google_defaults"],
 }
 
@@ -1839,6 +1840,7 @@ rust_ffi_static {
 
 cc_library_static {
     name: "libprotobuf_cpp_api",
+    visibility: ["//visibility:public"],
     srcs: [
         "rust/cpp_kernel/compare.cc",
         "rust/cpp_kernel/debug.cc",
