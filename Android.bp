@@ -895,6 +895,7 @@ java_library_static {
         "java/core/src/main/java/com/google/protobuf/RawMessageInfo.java",
         "java/core/src/main/java/com/google/protobuf/Reader.java",
         "java/core/src/main/java/com/google/protobuf/RopeByteString.java",
+        "java/core/src/main/java/com/google/protobuf/RuntimeVersion.java",
         "java/core/src/main/java/com/google/protobuf/Schema.java",
         "java/core/src/main/java/com/google/protobuf/SchemaFactory.java",
         "java/core/src/main/java/com/google/protobuf/SchemaUtil.java",
@@ -1537,8 +1538,114 @@ cc_test_host {
     ],
 }
 
-// Java unit tests
+// Java & Kotlin unit tests
 // =======================================================
+genrule {
+    name: "libprotobuf-java-lite-test-util-sources",
+    srcs: [
+        "java/core/src/test/java/com/google/protobuf/TestUtil.java",
+        "java/lite/lite.awk",
+    ],
+    out: [
+        "TestUtil.java",
+    ],
+    cmd: "awk -f $(location java/lite/lite.awk) $(location java/core/src/test/java/com/google/protobuf/TestUtil.java) > $(out)",
+}
+
+java_test {
+    name: "libprotobuf-java-lite-test",
+    host_supported: true,
+    srcs: [
+        ":libprotobuf-internal-protos-no-protoc",
+        ":libprotobuf-java-lite-test-util-sources",
+        ":libprotobuf-test-protos-lite",
+        "java/core/src/main/resources/google/protobuf/java_features.proto",
+        "java/core/src/test/java/**/*.java",
+        "java/core/src/test/proto/**/*.proto",
+        "src/google/protobuf/unittest_custom_options.proto",
+        "src/google/protobuf/unittest_mset.proto",
+        "src/google/protobuf/unittest_mset_wire_format.proto",
+    ],
+    exclude_srcs: [
+        // LITE_TEST_EXCLUSIONS from BUILD.bazel, minus TestUtilLite.Java
+        "java/core/src/test/java/com/google/protobuf/AbstractMessageTest.java",
+        "java/core/src/test/java/com/google/protobuf/AbstractProto2SchemaTest.java",
+        "java/core/src/test/java/com/google/protobuf/AnyTest.java",
+        "java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java",
+        "java/core/src/test/java/com/google/protobuf/DeprecatedFieldTest.java",
+        "java/core/src/test/java/com/google/protobuf/DebugFormatTest.java",
+        "java/core/src/test/java/com/google/protobuf/ConcurrentDescriptorsTest.java",
+        "java/core/src/test/java/com/google/protobuf/DescriptorsTest.java",
+        "java/core/src/test/java/com/google/protobuf/DiscardUnknownFieldsTest.java",
+        "java/core/src/test/java/com/google/protobuf/DynamicMessageTest.java",
+        "java/core/src/test/java/com/google/protobuf/ExtensionRegistryFactoryTest.java",
+        "java/core/src/test/java/com/google/protobuf/FieldPresenceTest.java",
+        "java/core/src/test/java/com/google/protobuf/ForceFieldBuildersPreRun.java",
+        "java/core/src/test/java/com/google/protobuf/GeneratedMessageTest.java",
+        "java/core/src/test/java/com/google/protobuf/GeneratorNamesTest.java",
+        "java/core/src/test/java/com/google/protobuf/ImportOptionTest.java",
+        "java/core/src/test/java/com/google/protobuf/LazilyParsedMessageSetTest.java",
+        "java/core/src/test/java/com/google/protobuf/LazyFieldTest.java",
+        "java/core/src/test/java/com/google/protobuf/LazyStringEndToEndTest.java",
+        "java/core/src/test/java/com/google/protobuf/LegacyUnredactedTextFormatTest.java",
+        "java/core/src/test/java/com/google/protobuf/MapForProto2Test.java",
+        "java/core/src/test/java/com/google/protobuf/MapTest.java",
+        "java/core/src/test/java/com/google/protobuf/MessageTest.java",
+        "java/core/src/test/java/com/google/protobuf/NestedBuildersTest.java",
+        "java/core/src/test/java/com/google/protobuf/PackedFieldTest.java",
+        "java/core/src/test/java/com/google/protobuf/ParserTest.java",
+        "java/core/src/test/java/com/google/protobuf/ParseExceptionsTest.java",
+        "java/core/src/test/java/com/google/protobuf/Proto2ExtensionLookupSchemaTest.java",
+        "java/core/src/test/java/com/google/protobuf/Proto2SchemaTest.java",
+        "java/core/src/test/java/com/google/protobuf/Proto2UnknownEnumValueTest.java",
+        "java/core/src/test/java/com/google/protobuf/ProtobufToStringOutputTest.java",
+        "java/core/src/test/java/com/google/protobuf/RepeatedFieldBuilderTest.java",
+        "java/core/src/test/java/com/google/protobuf/ServiceTest.java",
+        "java/core/src/test/java/com/google/protobuf/SingleFieldBuilderTest.java",
+        "java/core/src/test/java/com/google/protobuf/TestBadIdentifiers.java",
+        "java/core/src/test/java/com/google/protobuf/TextFormatParseInfoTreeTest.java",
+        "java/core/src/test/java/com/google/protobuf/TextFormatParseLocationTest.java",
+        "java/core/src/test/java/com/google/protobuf/TextFormatPerformanceTest.java",
+        "java/core/src/test/java/com/google/protobuf/TextFormatTest.java",
+        "java/core/src/test/java/com/google/protobuf/TestUtil.java",
+        "java/core/src/test/java/com/google/protobuf/TypeRegistryTest.java",
+        "java/core/src/test/java/com/google/protobuf/UnknownEnumValueTest.java",
+        "java/core/src/test/java/com/google/protobuf/UnknownFieldSetLiteTest.java",
+        "java/core/src/test/java/com/google/protobuf/UnknownFieldSetPerformanceTest.java",
+        "java/core/src/test/java/com/google/protobuf/UnknownFieldSetTest.java",
+        "java/core/src/test/java/com/google/protobuf/UnredactedDebugFormatForTestTest.java",
+        "java/core/src/test/java/com/google/protobuf/WellKnownTypesTest.java",
+        "java/core/src/test/java/com/google/protobuf/WireFormatTest.java",
+
+        // long-running tests
+        "java/core/src/test/java/com/google/protobuf/DecodeUtf8Test.java",
+        "java/core/src/test/java/com/google/protobuf/IsValidUtf8Test.java",
+        "java/core/src/test/java/com/google/protobuf/IsValidUtf8TestUtil.java",
+    ],
+    data: [
+        "src/google/protobuf/testdata/*",
+    ],
+    proto: {
+        type: "lite",
+        local_include_dirs: [
+            "java/core/src/main/resources",
+            "java/core/src/test/proto",
+            "src",
+        ],
+        canonical_path_from_root: false,
+    },
+    static_libs: [
+        "junit",
+        "libprotobuf-java-lite",
+        "truth",
+    ],
+    errorprone: {
+        javacflags: [
+            "-Xep:RedundantSetterCall:WARN",
+        ],
+    },
+}
+
 java_test_host {
     name: "libprotobuf-java-full-test",
     defaults: ["libprotobuf_errorprone_defaults"],
@@ -1605,6 +1712,32 @@ java_library_host {
         ],
         canonical_path_from_root: false,
     },
+}
+
+java_test {
+    name: "libprotobuf-kotlin-lite-test",
+    host_supported: true,
+    defaults: ["libprotobuf_errorprone_defaults"],
+    srcs: [
+        ":libprotobuf-java-lite-test-util-sources",
+        ":libprotobuf-test-protos-lite",
+        "java/core/src/test/java/com/google/protobuf/TestUtilLite.java",
+        "java/kotlin/src/test/proto/**/*.proto",
+        "java/kotlin/src/test/kotlin/com/google/protobuf/Proto3Test.kt",
+        "java/kotlin-lite/src/test/kotlin/**/*.kt",
+    ],
+    proto: {
+        type: "kotlin-lite",
+        local_include_dirs: [
+            "java/kotlin/src/test/proto",
+        ],
+        canonical_path_from_root: false,
+    },
+    static_libs: [
+        "junit",
+        "libprotobuf-kotlin-lite",
+        "truth",
+    ],
 }
 
 java_test_host {
