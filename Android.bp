@@ -942,7 +942,15 @@ java_library_static {
     defaults: ["libprotobuf_errorprone_defaults"],
 
     srcs: [
-        "java/kotlin-lite/src/main/kotlin/**/*.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/ByteStrings.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/DslList.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/DslMap.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/DslProxy.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/ExtensionList.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/OnlyForUseByGeneratedProtoCode.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/ProtoDslMarker.kt",
+        "java/kotlin/src/main/kotlin/com/google/protobuf/UnmodifiableCollections.kt",
+        "java/kotlin-lite/src/main/kotlin/com/google/protobuf/ExtendableMessageLiteExtensions.kt",
     ],
     static_libs: [
         "libprotobuf-java-lite",
