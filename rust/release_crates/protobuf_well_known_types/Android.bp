@@ -76,6 +76,7 @@ rust_library {
     ],
     shared_libs: ["libprotobuf-cpp-full"],
     host_supported: true,
+    edition: "2021",
 }
 
 // With build system support, this would be another available output from the proto library declaration
