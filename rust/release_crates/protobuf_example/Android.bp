@@ -99,6 +99,7 @@ rust_library {
         "libprotobuf-cpp-full",
     ],
     host_supported: true,
+    edition: "2021",
 }
 
 rust_binary {
