@@ -1958,6 +1958,7 @@ rust_defaults {
 
 rust_defaults {
     name: "libprotobuf_google_defaults",
+    min_sdk_version: "apex_inherit",
     crate_name: "protobuf",
     defaults: ["libprotobuf_google_version_defaults"],
     srcs: ["rust/shared.rs"],
@@ -2004,6 +2005,7 @@ rust_test {
 
 rust_library {
     name: "libutf8_google",
+    min_sdk_version: "apex_inherit",
     crate_name: "utf8",
     srcs: ["rust/utf8.rs"],
     edition: "2021",
@@ -2029,6 +2031,7 @@ rust_proc_macro {
 
 rust_library {
     name: "libprotobuf_cpp_alloc",
+    min_sdk_version: "apex_inherit",
     crate_name: "protobuf_cpp_alloc",
     srcs: ["rust/cpp_kernel/rust_alloc_for_cpp_api.rs"],
     edition: "2021",
@@ -2043,6 +2046,10 @@ rust_library {
 
 rust_ffi_static {
     name: "libprotobuf_cpp_alloc_ffi",
+    apex_available: [
+        "com.android.bettertogether",
+    ],
+    min_sdk_version: "apex_inherit",
     crate_name: "protobuf_cpp_alloc",
     srcs: ["rust/cpp_kernel/rust_alloc_for_cpp_api.rs"],
     edition: "2021",
@@ -2053,6 +2060,10 @@ rust_ffi_static {
 
 cc_library_static {
     name: "libprotobuf_cpp_api",
+    apex_available: [
+        "com.android.bettertogether",
+    ],
+    min_sdk_version: "apex_inherit",
     visibility: ["//visibility:public"],
     srcs: [
         "rust/cpp_kernel/compare.cc",

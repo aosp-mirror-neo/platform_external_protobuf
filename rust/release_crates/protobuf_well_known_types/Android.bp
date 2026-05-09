@@ -56,6 +56,11 @@ genrule {
 
 cc_library_static {
     name: "libprotobuf_rust_well_known_cpp_thunk",
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    min_sdk_version: "apex_inherit",
     static_libs: ["libprotobuf_cpp_api"],
     shared_libs: ["libprotobuf-cpp-full"],
     srcs: [":protobuf-rust-well-known-gen"],
@@ -64,6 +69,11 @@ cc_library_static {
 
 rust_library {
     name: "libprotobuf_well_known_types",
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    min_sdk_version: "apex_inherit",
     visibility: ["//visibility:public"],
     crate_name: "protobuf_well_known_types",
     srcs: [":protobuf-rust-well-known-gen"],
