@@ -226,9 +226,8 @@ cc_defaults {
     },
 
     // This suffix must be updated when a new version is imported.
-    // It should match the "cpp" entry in version.json plus the suffix
-    // defined in GOOGLE_PROTOBUF_VERSION_SUFFIX, if any.
-    suffix: "-6.33.5-absl20260526",
+    // It should match the "cpp" entry in version.json.
+    suffix: "-6.33.5",
 }
 
 // Defaults for the lite library when thread-local storage is enabled.
