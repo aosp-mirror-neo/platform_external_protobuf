@@ -36,7 +36,6 @@
 #include "absl/base/dynamic_annotations.h"
 #include "absl/base/optimization.h"
 #include "absl/log/absl_check.h"
-#include "absl/meta/type_traits.h"
 #include "absl/strings/cord.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/generated_enum_util.h"
@@ -268,11 +267,11 @@ class ABSL_ATTRIBUTE_WARN_UNUSED RepeatedField final
                 "We do not support reference value types.");
   static constexpr PROTOBUF_ALWAYS_INLINE void StaticValidityCheck() {
     static_assert(
-        absl::disjunction<internal::is_supported_integral_type<Element>,
-                          internal::is_supported_floating_point_type<Element>,
-                          std::is_same<absl::Cord, Element>,
-                          std::is_same<UnknownField, Element>,
-                          is_proto_enum<Element>>::value,
+        std::disjunction<internal::is_supported_integral_type<Element>,
+                         internal::is_supported_floating_point_type<Element>,
+                         std::is_same<absl::Cord, Element>,
+                         std::is_same<UnknownField, Element>,
+                         is_proto_enum<Element>>::value,
         "We only support non-string scalars in RepeatedField.");
   }
 
