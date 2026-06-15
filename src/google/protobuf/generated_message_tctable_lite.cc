@@ -918,7 +918,7 @@ PROTOBUF_ALWAYS_INLINE const char* ParseVarint(const char* p, Type* value) {
                 "Only [u]int32_t and [u]int64_t please");
 #ifdef __aarch64__
   // The VarintParse parser has a faster implementation on ARM.
-  std::conditional_t<sizeof(Type) == 4, uint32_t, uint64_t> tmp;
+  absl::conditional_t<sizeof(Type) == 4, uint32_t, uint64_t> tmp;
   p = VarintParse(p, &tmp);
   if (p != nullptr) {
     *value = tmp;
